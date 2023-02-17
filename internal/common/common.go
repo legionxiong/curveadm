@@ -46,6 +46,11 @@ const (
 	POOL_TYPE_LOGICAL      = "logicalpool"
 	POOL_TYPE_PHYSICAL     = "physicalpool"
 
+	// disk
+	KEY_ALL_DISK_RECORDS                    = "ALL_DISK_RECORDS"
+	DIRECT_MOUNT_DISK_DEVICE_IN_COUNTER_YES = "Yes"
+	DIRECT_MOUNT_DISK_DEVICE_IN_COUNTER_NO  = "No"
+
 	// format
 	KEY_ALL_FORMAT_STATUS = "ALL_FORMAT_STATUS"
 

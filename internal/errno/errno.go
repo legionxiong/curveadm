@@ -192,6 +192,12 @@ var (
 	// 100: database/SQL (init failed)
 	ERR_INIT_SQL_DATABASE_FAILED = EC(100000, "init SQLite database failed")
 
+	// 108: database/SQL (execute SQL statement: disk table)
+	ERR_UPDATE_DISK_FAILED      = EC(108000, "execute SQL failed while updating disk")
+	ERR_GET_DISK_RECORDS_FAILED = EC(108001, "execute SQL failed which get disk records")
+	// 109: database/SQL (execute SQL statement: disks table)
+	ERR_GET_DISKS_FAILED    = EC(109000, "execute SQL failed which get disks")
+	ERR_UPDATE_DISKS_FAILED = EC(109001, "execute SQL failed while updating disks")
 	// 110: database/SQL (execute SQL statement: hosts table)
 	ERR_GET_HOSTS_FAILED    = EC(110000, "execute SQL failed which get hosts")
 	ERR_UPDATE_HOSTS_FAILED = EC(110001, "execute SQL failed which update hosts")
@@ -274,7 +280,6 @@ var (
 	// 311: configure (curveadm.cfg: invalid configure value)
 	ERR_UNSUPPORT_CURVEADM_LOG_LEVEL      = EC(311000, "unsupport curveadm log level")
 	ERR_UNSUPPORT_CURVEADM_CONFIGURE_ITEM = EC(311001, "unsupport curveadm configure item")
-
 	// 320: configure (hosts.yaml: parse failed)
 	ERR_HOSTS_FILE_NOT_FOUND   = EC(320000, "hosts file not found")
 	ERR_READ_HOSTS_FILE_FAILED = EC(320001, "read hosts file failed")
@@ -290,7 +295,20 @@ var (
 	ERR_PRIVATE_KEY_FILE_REQUIRE_600_PERMISSIONS = EC(321006, "SSH private key file require 600 permissions")
 	ERR_DUPLICATE_HOST                           = EC(321007, "host is duplicate")
 	ERR_HOSTNAME_REQUIRES_VALID_IP_ADDRESS       = EC(321008, "hostname requires valid IP address")
-
+	// 322: configure (disks.yaml: parse failed)
+	ERR_DISKS_FILE_NOT_FOUND   = EC(322000, "disks file not found")
+	ERR_READ_DISKS_FILE_FAILED = EC(322001, "read disks file failed")
+	ERR_EMPTY_DISKS            = EC(322002, "disks is empty")
+	ERR_PARSE_DISKS_FAILED     = EC(322003, "parse disks failed")
+	// 323: configure (disks.yaml: invalid configure value)
+	ERR_UNSUPPORT_DISKS_CONFIGURE_ITEM = EC(323000, "unsupport disks configure item")
+	ERR_DEVICE_FIELD_MISSING           = EC(323001, "device field missing")
+	ERR_MOUNT_POINT_FIELD_MISSING      = EC(323002, "mount field missing")
+	ERR_FORMATTED_FIELD_MISSING        = EC(323003, "formatted field missing")
+	ERR_DUPLICATE_DISK                 = EC(323004, "disk is duplicated")
+	ERR_DUPLICATE_DISK_MOUNT_POINT     = EC(323005, "disk mount point is duplicated")
+	ERR_DISK_FORMAT_PERCENT_EXCEED_100 = EC(323006, "disk format percent is greater than 100")
+	ERR_ONLY_EXCLUDE_HOSTS             = EC(323007, "either hosts_only or hosts_exclude cloud be set, not both")
 	// 330: configure (topology.yaml: parse failed)
 	ERR_TOPOLOGY_FILE_NOT_FOUND         = EC(330000, "topology file not found")
 	ERR_READ_TOPOLOGY_FILE_FAILED       = EC(330001, "read topology file failed")
@@ -340,6 +358,10 @@ var (
 	ERR_REQUIRE_CURVEBS_KIND_CLIENT_CONFIGURE_FILE = EC(351002, "require curvebs kind client configure file")
 	ERR_REQUIRE_CURVEFS_KIND_CLIENT_CONFIGURE_FILE = EC(351003, "require curvefs kind client configure file")
 	ERR_INVALID_CLUSTER_LISTEN_MDS_ADDRESS         = EC(351004, "invalid cluster MDS listen address")
+
+	// 360: sqlite database
+	ERR_DATABASE_EMPTY_QUERY_RESULT = EC(360000, "empty query result")
+	ERR_DATABASE_EMPTY_DISK_UUID    = EC(360001, "empty disk uuid")
 
 	// 400: common (hosts)
 	ERR_HOST_NOT_FOUND = EC(400000, "host not found")
