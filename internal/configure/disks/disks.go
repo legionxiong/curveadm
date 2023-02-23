@@ -27,6 +27,7 @@ import (
 	"github.com/opencurve/curveadm/internal/common"
 	"github.com/opencurve/curveadm/internal/configure/hosts"
 	"github.com/opencurve/curveadm/internal/errno"
+	"github.com/opencurve/curveadm/internal/storage"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
 )
@@ -96,7 +97,20 @@ func parseDisksData(data string) (*Disks, error) {
 	return disks, nil
 }
 
-func UpdateDisks(disksData, host, device, chunkserverId, oldDiskUuid string, curveadm *cli.CurveAdm) error {
+func getDiskId(disk storage.Disk) (string, error) {
+	uriSlice := strings.Split(disk.URI, "//")
+	if len(uriSlice) == 0 {
+		return "", errno.ERR_INVALID_DISK_URI.
+			F("The disk[%s:%s] URI[%s] is invalid", disk.Host, disk.Device, disk.URI)
+	}
+
+	if uriSlice[0] == common.DISK_URI_PROTO_FS_UUID {
+		return uriSlice[1], nil
+	}
+	return "", nil
+}
+
+func UpdateDisks(disksData, host, device, chunkserverId, oldDiskId string, curveadm *cli.CurveAdm) error {
 	disks, err := parseDisksData(disksData)
 	if err != nil {
 		return err
@@ -105,7 +119,7 @@ func UpdateDisks(disksData, host, device, chunkserverId, oldDiskUuid string, cur
 	if err != nil {
 		return err
 	}
-	var diskUuid string
+	// var diskId string
 	var diskExist bool
 
 	if len(diskRecords) == 0 {
@@ -144,6 +158,7 @@ func UpdateDisks(disksData, host, device, chunkserverId, oldDiskUuid string, cur
 					newVale := reflect.ValueOf(hostsOnlyMap)
 					intSliceElemValue.Set(newVale)
 				}
+				break
 			}
 		}
 
@@ -154,28 +169,56 @@ func UpdateDisks(disksData, host, device, chunkserverId, oldDiskUuid string, cur
 				common.DISK_ONLY_HOSTS: []string{host},
 			}
 			disks.Disk = append(disks.Disk, diskStruct)
-
+			for i, d := range disks.Disk {
+				dc := NewDiskConfig(i, d)
+				if err := dc.Build(); err != nil {
+					return err
+				}
+				if dc.GetDevice() == device {
+					hostsExclude := dc.GetHostsExclude()
+					if len(hostsExclude) > 0 {
+						hostsExclude = append(hostsExclude, host)
+						hostsOnlyMap := make(map[string][]interface{})
+						hostsOnlyMap[common.DISK_ONLY_HOSTS] = hostsExclude
+						intSliceElemValue := reflect.ValueOf(&d).Elem()
+						newVale := reflect.ValueOf(hostsOnlyMap)
+						intSliceElemValue.Set(newVale)
+					} else {
+						diskStruct := map[string]interface{}{
+							"device":                  device,
+							"mount":                   disk.MountPoint,
+							common.DISK_EXCLUDE_HOSTS: []string{host},
+						}
+						disks.Disk = append(disks.Disk, diskStruct)
+						// add new disk record
+						if err := curveadm.Storage().SetDisk(disk.Host, device, disk.MountPoint,
+							disk.ContainerImageLocation, disk.FormatPercent); err != nil {
+							return err
+						}
+						// remove old disk record
+						if err := curveadm.Storage().DeleteDisk(disk.Host, disk.Device); err != nil {
+							return err
+						}
+					}
+					break
+				}
+			}
 		}
 	} else {
 		disk := diskRecords[0]
-		// disk used by other chunkserver
+		// check if disk used by other chunkserver
 		if disk.ChunkServerID != chunkserverId {
 			return errno.ERR_REPLACE_DISK_USED_BY_OTHER_CHUNKSERVER.
 				F("The disk[%s:%s] is being used by chunkserver %s",
 					disk.Host, disk.Device, disk.ChunkServerID)
 		}
-		uriSlice := strings.Split(disk.URI, "//")
-		if len(uriSlice) == 0 {
-			return errno.ERR_INVALID_DISK_URI.
-				F("The disk[%s:%s] URI[%s] is invalid", disk.Host, disk.Device, disk.URI)
-		}
-		// the same disk
-		if uriSlice[0] == common.DISK_URI_PROTO_FS_UUID {
-			diskUuid = uriSlice[1]
-			if diskUuid == oldDiskUuid {
-				return errno.ERR_REPLACE_THE_SAME_DISK.
-					F("The new disk[UUID: %s] and the origin disk are the same[UUID: %s]", diskUuid, oldDiskUuid)
-			}
+
+		// check if the same disk
+		if diskId, err := getDiskId(disk); err != nil {
+			return err
+		} else if diskId == oldDiskId {
+			return errno.ERR_REPLACE_THE_SAME_PHYSICAL_DISK.
+				F("The new disk[UUID:%s] and the origin disk[UUID:%s] are the same", diskId, oldDiskId)
 		}
 	}
 	fmt.Println(disks.Disk)
