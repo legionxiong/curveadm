@@ -1,7 +1,7 @@
 global:
   format_percent: 95
 
-disks:
+disk:
   - device: /dev/sdb1
     mount: /data/chunkserver0
   - device: /dev/sdc1

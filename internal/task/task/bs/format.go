@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/opencurve/curveadm/cli/cli"
+	"github.com/opencurve/curveadm/internal/common"
 	"github.com/opencurve/curveadm/internal/configure"
 	os "github.com/opencurve/curveadm/internal/configure/os"
 	"github.com/opencurve/curveadm/internal/configure/topology"
@@ -205,7 +206,7 @@ func (s *step2UpdateDiskSizeUri) Execute(ctx *context.Context) error {
 		}
 	}
 	if len(s.mountPoint) > 1 {
-		uri = strings.Join([]string{"fs:uuid", s.uri}, "//")
+		uri = strings.Join([]string{common.DISK_URI_PROTO_FS_UUID, s.uri}, "//")
 	}
 
 	if err := curveadm.Storage().UpdateDiskSize(s.host, s.device, s.size); err != nil {

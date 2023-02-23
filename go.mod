@@ -52,6 +52,7 @@ require (
 	golang.org/x/tools v0.4.0 // indirect
 	google.golang.org/genproto v0.0.0-20221206210731-b1a01be3a5f6 // indirect
 	google.golang.org/grpc v1.51.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
 replace github.com/melbahja/goph v1.3.0 => github.com/Wine93/goph v0.0.0-20220907033045-3b286d827fb3

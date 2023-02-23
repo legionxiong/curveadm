@@ -95,13 +95,12 @@ func updateDisk(data string, curveadm *cli.CurveAdm) error {
 		return err
 	}
 
-	var toRecord bool
 	diskMapList := []map[string][]string{}
 	// write disk records
 	for _, hc := range hcs {
 		diskMap := make(map[string][]string)
 		for _, dc := range dcs {
-			toRecord = true
+			toRecord := true
 			host := hc.GetHost()
 			device := dc.GetDevice()
 			diskOnlyHosts := dc.GetHostsOnly()
@@ -143,19 +142,19 @@ func updateDisk(data string, curveadm *cli.CurveAdm) error {
 	if len(diskRecords) != len(diskMapList) {
 		var diskToDeleteList []storage.Disk
 		for _, dr := range diskRecords {
-			diskDevExists := false
+			diskItemToKeep := false
 			for _, dmap := range diskMapList {
 				if diskList, ok := dmap[dr.Host]; ok {
 					for _, dev := range diskList {
 						if dr.Device == dev {
-							diskDevExists = true
+							diskItemToKeep = true
 							break
 						}
 					}
 					break
 				}
 			}
-			if !diskDevExists {
+			if !diskItemToKeep {
 				diskToDeleteList = append(diskToDeleteList, dr)
 			}
 		}
@@ -164,7 +163,7 @@ func updateDisk(data string, curveadm *cli.CurveAdm) error {
 			// the disk record with nonempty chunkserver id should not be deleted
 			if dr.ChunkServerID != comm.DISK_DEFAULT_NULL_CHUNKSERVER_ID {
 				return errno.ERR_DISK_CHUNKSER_ID_NONEMPTY.
-					F("the disk[%s:%s] to be excluded by hosts_only or hosts_exclude config has chunkserver id[%s].",
+					F("The disk[%s:%s] to be excluded by hosts_only or hosts_exclude config has chunkserver id[%s].",
 						dr.Host, dr.Device, dr.ChunkServerID)
 			}
 

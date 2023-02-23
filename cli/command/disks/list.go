@@ -43,7 +43,7 @@ func NewListCommand(curveadm *cli.CurveAdm) *cobra.Command {
 	}
 
 	flags := cmd.Flags()
-	flags.StringVar(&options.host, "host", "*", "Filter disk by host")
+	flags.StringVar(&options.host, "host", "*", "List disks of given host")
 
 	return cmd
 }

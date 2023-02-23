@@ -47,12 +47,18 @@ const (
 	POOL_TYPE_PHYSICAL     = "physicalpool"
 
 	// disk
+	DISK_URI_PROTO_FS_UUID               = "fs:uuid"
 	DISK_DEVICE_MOUNT_IN_CONTAINER_TRUE  = "Yes"
 	DISK_DEVICE_MOUNT_IN_CONTAINER_FALSE = "No"
 	DISK_DEFAULT_NULL_SIZE               = "-"
 	DISK_DEFAULT_NULL_URI                = DISK_DEFAULT_NULL_SIZE
 	DISK_DEFAULT_NULL_CONTAINER_IMAGE    = DISK_DEFAULT_NULL_SIZE
 	DISK_DEFAULT_NULL_CHUNKSERVER_ID     = DISK_DEFAULT_NULL_SIZE
+	DISK_EXCLUDE_HOSTS                   = "hosts_exclude"
+	DISK_ONLY_HOSTS                      = "hosts_only"
+	DISK_DEVICE_PATH                     = "disk_device_path"
+	DISK_CHUNKSERVER_ID                  = "disk_chunkserver_id"
+	DISK_ATTACHED_HOST                   = "disk_attached_host"
 
 	// format
 	KEY_ALL_FORMAT_STATUS = "ALL_FORMAT_STATUS"

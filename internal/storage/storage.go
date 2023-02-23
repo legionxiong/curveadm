@@ -382,6 +382,8 @@ func (s *Storage) GetDisk(filter string, args ...interface{}) ([]Disk, error) {
 	switch filter {
 	case "all":
 		query = SELECT_DISK_ALL
+	case "device":
+		query = SELECT_DISK_BY_DEVICE_PATH
 	case "host":
 		query = SELECT_DISK_BY_HOST
 	case "service":

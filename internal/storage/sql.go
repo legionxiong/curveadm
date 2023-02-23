@@ -38,7 +38,7 @@
 package storage
 
 var (
-	// tables (hosts/clusters/containers(service)/clients/playrgound/audit/disk/disks)
+	// tables (hosts/clusters/containers(service)/clients/playrgound/audit/disk/disks/replacedisk)
 	CREATE_VERSION_TABLE = `
 		CREATE TABLE IF NOT EXISTS version (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,

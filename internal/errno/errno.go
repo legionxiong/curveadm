@@ -195,6 +195,8 @@ var (
 	// 108: database/SQL (execute SQL statement: disk table)
 	ERR_UPDATE_DISK_FAILED      = EC(108000, "execute SQL failed while updating disk")
 	ERR_GET_DISK_RECORDS_FAILED = EC(108001, "execute SQL failed while get disk records")
+	ERR_DISK_NOT_FOUND          = EC(108002, "disk record not found")
+	ERR_EMPTY_DISKS             = EC(108003, "disks are empty")
 
 	// 109: database/SQL (execute SQL statement: disks table)
 	ERR_GET_DISKS_FAILED    = EC(109000, "execute SQL failed while get disks")
@@ -301,7 +303,6 @@ var (
 	// 322: configure (disks.yaml: parse failed)
 	ERR_DISKS_FILE_NOT_FOUND   = EC(322000, "disks file not found")
 	ERR_READ_DISKS_FILE_FAILED = EC(322001, "read disks file failed")
-	ERR_EMPTY_DISKS            = EC(322002, "disks is empty")
 	ERR_PARSE_DISKS_FAILED     = EC(322003, "parse disks failed")
 
 	// 323: configure (disks.yaml: invalid configure value)
@@ -544,6 +545,14 @@ var (
 
 	// 800: deploy
 	ERR_DISK_DEVICE_NOT_FORMATTED = EC(800000, "disk device not formatted")
+
+	// 810: replace disk
+	ERR_CHUNKSERVER_ID_IS_REQUIRED             = EC(810000, "chunkserver id is required")
+	ERR_DISK_PATH_IS_REQUIRED                  = EC(810001, "disk device patch is required")
+	ERR_DISK_WITH_CHUNKSERVER_NOT_EXISTS       = EC(810002, "chunkserver id not exist")
+	ERR_INVALID_DISK_URI                       = EC(810003, "invalid disk uri")
+	ERR_REPLACE_THE_SAME_DISK                  = EC(810004, "replace the same disk")
+	ERR_REPLACE_DISK_USED_BY_OTHER_CHUNKSERVER = EC(810005, "replace disk used by other chunkserver")
 
 	// 900: others
 	ERR_CANCEL_OPERATION = EC(CODE_CANCEL_OPERATION, "cancel operation")

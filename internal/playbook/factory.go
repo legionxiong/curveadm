@@ -81,6 +81,7 @@ const (
 	GET_CLIENT_STATUS
 	INSTALL_CLIENT
 	UNINSTALL_CLIENT
+	REPLACE_DISK
 
 	// bs
 	BALANCE_LEADER
@@ -202,6 +203,8 @@ func (p *Playbook) createTasks(step *PlaybookStep) (*tasks.Tasks, error) {
 			t, err = comm.NewStartServiceTask(curveadm, config.GetDC(i))
 		case STOP_SERVICE:
 			t, err = comm.NewStopServiceTask(curveadm, config.GetDC(i))
+		case REPLACE_DISK:
+			t, err = bs.NewReplaceDiskTask(curveadm, config.GetDC(i))
 		case RESTART_SERVICE:
 			t, err = comm.NewRestartServiceTask(curveadm, config.GetDC(i))
 		case CREATE_PHYSICAL_POOL,

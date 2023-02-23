@@ -17,6 +17,7 @@
 package disks
 
 import (
+	"github.com/opencurve/curveadm/internal/common"
 	comm "github.com/opencurve/curveadm/internal/configure/common"
 )
 
@@ -49,14 +50,14 @@ var (
 	)
 
 	CONFIG_HOSTS_EXCLUDE = itemset.Insert(
-		"hosts_exclude",
+		common.DISK_EXCLUDE_HOSTS,
 		comm.REQUIRE_SLICE,
 		false,
 		nil,
 	)
 
 	CONFIG_HOSTS_ONLY = itemset.Insert(
-		"hosts_only",
+		common.DISK_ONLY_HOSTS,
 		comm.REQUIRE_SLICE,
 		false,
 		nil,
