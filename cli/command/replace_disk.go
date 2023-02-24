@@ -73,29 +73,29 @@ func genReplaceDiskPlaybook(curveadm *cli.CurveAdm, dcs []*topology.DeployConfig
 
 	steps := REPLACE_DISK_PLAYBOOK_STEPS
 	pb := playbook.NewPlaybook(curveadm)
-	disks, err := curveadm.Storage().GetDisk("service", options.chunkserverId)
 
+	if containerId, err := curveadm.Storage().GetContainerId(options.chunkserverId); err != nil {
+		return pb, err
+	} else if len(containerId) == 0 {
+		return pb, errno.ERR_DATABASE_EMPTY_QUERY_RESULT.
+			F("The chunkserver[ID: %s] was not found or it has no related container", options.chunkserverId)
+	}
+	disks, err := curveadm.Storage().GetDisk("service", options.chunkserverId)
 	if err != nil {
 		return pb, err
 	}
-	if len(disks) == 0 {
-		return pb, errno.ERR_DISK_NOT_FOUND.
-			F("disk with chunkserver id[%s] not found", options.chunkserverId)
-	}
-
-	disk := disks[0]
 
 	dcs = curveadm.FilterDeployConfig(dcs, topology.FilterOption{
 		Id:   options.chunkserverId,
 		Role: configure.ROLE_CHUNKSERVER,
-		Host: disk.Host,
+		Host: disks[0].Host,
 	})
 	if len(dcs) == 0 {
 		return nil, errno.ERR_NO_SERVICES_MATCHED
 	}
 	// curveadm.MemStorage().Set(comm.DISK_ATTACHED_HOST, disk.Host)
 	curveadm.MemStorage().Set(comm.DISK_CHUNKSERVER_ID, options.chunkserverId)
-	curveadm.MemStorage().Set(comm.DISK_DEVICE_PATH, options.device)
+	curveadm.MemStorage().Set(comm.DISK_DEVICE, options.device)
 
 	for _, step := range steps {
 		pb.AddStep(&playbook.PlaybookStep{

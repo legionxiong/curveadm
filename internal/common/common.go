@@ -56,7 +56,7 @@ const (
 	DISK_DEFAULT_NULL_CHUNKSERVER_ID     = DISK_DEFAULT_NULL_SIZE
 	DISK_EXCLUDE_HOSTS                   = "hosts_exclude"
 	DISK_ONLY_HOSTS                      = "hosts_only"
-	DISK_DEVICE_PATH                     = "disk_device_path"
+	DISK_DEVICE                          = "device"
 	DISK_CHUNKSERVER_ID                  = "disk_chunkserver_id"
 	DISK_ATTACHED_HOST                   = "disk_attached_host"
 

@@ -18,8 +18,6 @@ package disks
 
 import (
 	"bytes"
-	"fmt"
-	"reflect"
 	"strings"
 
 	"github.com/opencurve/curveadm/cli/cli"
@@ -35,7 +33,7 @@ import (
 type (
 	Disks struct {
 		Global map[string]interface{}   `mapstructure:"global"`
-		Disk   []map[string]interface{} `mapstructure:"disk"`
+		Disks  []map[string]interface{} `mapstructure:"disks"`
 	}
 
 	DiskConfig struct {
@@ -120,90 +118,66 @@ func UpdateDisks(disksData, host, device, chunkserverId, oldDiskId string, curve
 		return err
 	}
 	// var diskId string
-	var diskExist bool
 
 	if len(diskRecords) == 0 {
-		if serviceContainerId, err := curveadm.Storage().GetContainerId(chunkserverId); err != nil {
-			return err
-		} else if len(serviceContainerId) == 0 {
-			return errno.ERR_DATABASE_EMPTY_QUERY_RESULT.
-				F("The chunkserver[ID: %s] was not found", chunkserverId)
-		}
-		chunkserverDisk, err := curveadm.Storage().GetDisk("service", chunkserverId)
+		chunkDisk, err := curveadm.Storage().GetDisk("service", chunkserverId)
 		if err != nil {
 			return err
 		}
-		if len(chunkserverDisk) == 0 {
+		if len(chunkDisk) == 0 {
 			return errno.ERR_DATABASE_EMPTY_QUERY_RESULT.
-				F("Chunkserver[ID: %s] related disk device was not found", chunkserverId)
+				F("Chunkserver[ID: %s] has no related disk device", chunkserverId)
 		}
-		disk := chunkserverDisk[0]
-
-		fmt.Println(disks.Disk)
-		for i, d := range disks.Disk {
-			dc := NewDiskConfig(i, d)
-			if err := dc.Build(); err != nil {
-				return err
+		disk := chunkDisk[0]
+		var deviceExist bool
+		var diskIndex int
+		var diskMap map[string]interface{}
+		for i, d := range disks.Disks {
+			if d["device"] == device {
+				deviceExist = true
+				diskIndex = i
+				diskMap = d
 			}
-			// diskDev := disk.Device
-			fmt.Println(device, dc.GetDevice())
-			if dc.GetDevice() == device {
-				hostsOnly := dc.GetHostsOnly()
-				diskExist = true
-				if len(hostsOnly) > 0 {
-					hostsOnly = append(hostsOnly, host)
-					hostsOnlyMap := make(map[string][]interface{})
-					hostsOnlyMap[common.DISK_ONLY_HOSTS] = hostsOnly
-					intSliceElemValue := reflect.ValueOf(&d).Elem()
-					newVale := reflect.ValueOf(hostsOnlyMap)
-					intSliceElemValue.Set(newVale)
+
+			if d["device"] == disk.Device {
+				// fmt.Println("d out ", d)
+				// fmt.Println("exclude hosts", d[common.DISK_EXCLUDE_HOSTS])
+
+				if d[common.DISK_EXCLUDE_HOSTS] != nil {
+					// append old disk into hosts_exclude
+					disks.Disks[i][common.DISK_EXCLUDE_HOSTS] = append(
+						d[common.DISK_EXCLUDE_HOSTS].([]interface{}), host)
+				} else {
+					// add old disk hosts_exclude
+					disks.Disks[i][common.DISK_EXCLUDE_HOSTS] = []string{host}
+					// remove old disk record
+					if err := curveadm.Storage().DeleteDisk(disk.Host, disk.Device); err != nil {
+						return err
+					}
 				}
-				break
 			}
 		}
 
-		if !diskExist {
+		if deviceExist {
+			// append new disk into hosts_only
+			disks.Disks[diskIndex][common.DISK_ONLY_HOSTS] = append(
+				diskMap[common.DISK_ONLY_HOSTS].([]interface{}), host)
+		} else {
+			// add new disk hosts_only
 			diskStruct := map[string]interface{}{
 				"device":               device,
 				"mount":                disk.MountPoint,
 				common.DISK_ONLY_HOSTS: []string{host},
 			}
-			disks.Disk = append(disks.Disk, diskStruct)
-			for i, d := range disks.Disk {
-				dc := NewDiskConfig(i, d)
-				if err := dc.Build(); err != nil {
-					return err
-				}
-				if dc.GetDevice() == device {
-					hostsExclude := dc.GetHostsExclude()
-					if len(hostsExclude) > 0 {
-						hostsExclude = append(hostsExclude, host)
-						hostsOnlyMap := make(map[string][]interface{})
-						hostsOnlyMap[common.DISK_ONLY_HOSTS] = hostsExclude
-						intSliceElemValue := reflect.ValueOf(&d).Elem()
-						newVale := reflect.ValueOf(hostsOnlyMap)
-						intSliceElemValue.Set(newVale)
-					} else {
-						diskStruct := map[string]interface{}{
-							"device":                  device,
-							"mount":                   disk.MountPoint,
-							common.DISK_EXCLUDE_HOSTS: []string{host},
-						}
-						disks.Disk = append(disks.Disk, diskStruct)
-						// add new disk record
-						if err := curveadm.Storage().SetDisk(disk.Host, device, disk.MountPoint,
-							disk.ContainerImageLocation, disk.FormatPercent); err != nil {
-							return err
-						}
-						// remove old disk record
-						if err := curveadm.Storage().DeleteDisk(disk.Host, disk.Device); err != nil {
-							return err
-						}
-					}
-					break
-				}
-			}
+			disks.Disks = append(disks.Disks, diskStruct)
 		}
+
+		// add new disk record
+		if err := curveadm.Storage().SetDisk(disk.Host, device, disk.MountPoint,
+			disk.ContainerImage, disk.FormatPercent); err != nil {
+			return err
+		}
+
 	} else {
 		disk := diskRecords[0]
 		// check if disk used by other chunkserver
@@ -213,7 +187,7 @@ func UpdateDisks(disksData, host, device, chunkserverId, oldDiskId string, curve
 					disk.Host, disk.Device, disk.ChunkServerID)
 		}
 
-		// check if the same disk
+		// check if the same phsycial disk
 		if diskId, err := getDiskId(disk); err != nil {
 			return err
 		} else if diskId == oldDiskId {
@@ -221,14 +195,14 @@ func UpdateDisks(disksData, host, device, chunkserverId, oldDiskId string, curve
 				F("The new disk[UUID:%s] and the origin disk[UUID:%s] are the same", diskId, oldDiskId)
 		}
 	}
-	fmt.Println(disks.Disk)
-	diskm := Disks{disks.Global, disks.Disk}
+	// fmt.Println(disks.Disks)
+	diskm := Disks{disks.Global, disks.Disks}
 
 	data, err := yaml.Marshal(diskm)
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(data))
+	// fmt.Println(string(data))
 	if err := curveadm.Storage().SetDisks(string(data)); err != nil {
 		return err
 	}
@@ -245,7 +219,7 @@ func ParseDisks(data string) ([]*DiskConfig, error) {
 
 	dcs := []*DiskConfig{}
 	exist := map[string]bool{}
-	for i, disk := range disks.Disk {
+	for i, disk := range disks.Disks {
 		disk = hosts.NewIfNil(disk)
 		hosts.Merge(disks.Global, disk)
 		dc := NewDiskConfig(i, disk)
@@ -258,10 +232,10 @@ func ParseDisks(data string) ([]*DiskConfig, error) {
 			return nil, errno.ERR_DUPLICATE_DISK.
 				F("duplicate disk: %s", dc.GetDevice())
 		}
-		if _, ok := exist[dc.GetMountPoint()]; ok {
-			return nil, errno.ERR_DUPLICATE_DISK_MOUNT_POINT.
-				F("duplicate disk mount point: %s", dc.GetMountPoint())
-		}
+		// if _, ok := exist[dc.GetMountPoint()]; ok {
+		// 	return nil, errno.ERR_DUPLICATE_DISK_MOUNT_POINT.
+		// 		F("duplicate disk mount point: %s", dc.GetMountPoint())
+		// }
 		hostsExclude := dc.GetHostsExclude()
 		hostsOnly := dc.GetHostsOnly()
 		if len(hostsExclude) > 0 && len(hostsOnly) > 0 {

@@ -59,7 +59,7 @@ type Disk struct {
 	URI                    string
 	MountPoint             string
 	FormatPercent          int
-	ContainerImageLocation string
+	ContainerImage         string
 	DirectMountInContainer string
 	ChunkServerID          string
 	LastmodifiedTime       time.Time
@@ -411,7 +411,7 @@ func (s *Storage) GetDisk(filter string, args ...interface{}) ([]Disk, error) {
 			&disk.URI,
 			&disk.MountPoint,
 			&disk.FormatPercent,
-			&disk.ContainerImageLocation,
+			&disk.ContainerImage,
 			&disk.DirectMountInContainer,
 			&disk.ChunkServerID,
 			&disk.LastmodifiedTime)

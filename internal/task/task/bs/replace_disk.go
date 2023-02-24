@@ -57,7 +57,7 @@ func (s *replaceDisk) Execute(ctx *context.Context) error {
 func NewReplaceDiskTask(curveadm *cli.CurveAdm, dc *topology.DeployConfig) (*task.Task, error) {
 
 	chunkserverId := curveadm.MemStorage().Get(comm.DISK_CHUNKSERVER_ID).(string)
-	diskDevPath := curveadm.MemStorage().Get(comm.DISK_DEVICE_PATH).(string)
+	diskDevPath := curveadm.MemStorage().Get(comm.DISK_DEVICE).(string)
 	// host := curveadm.MemStorage().Get(comm.DISK_ATTACHED_HOST).(string)
 	subname := fmt.Sprintf("host=%s device=%s chunkserverId=%s",
 		dc.GetHost(), diskDevPath, chunkserverId)

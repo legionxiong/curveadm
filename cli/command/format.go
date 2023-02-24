@@ -147,8 +147,8 @@ func runFormat(curveadm *cli.CurveAdm, options formatOptions) error {
 	} else {
 		for _, dr := range diskRecords {
 			containerImage := configure.DEFAULT_CONTAINER_IMAGE
-			if len(dr.ContainerImageLocation) > 0 {
-				containerImage = dr.ContainerImageLocation
+			if len(dr.ContainerImage) > 0 {
+				containerImage = dr.ContainerImage
 			}
 			disk := fmt.Sprintf("%s:%s:%d", dr.Device, dr.MountPoint, dr.FormatPercent)
 			fc, err := configure.NewFormatConfig(containerImage, dr.Host, disk)
