@@ -17,6 +17,9 @@
 package disks
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/fatih/color"
 	"github.com/opencurve/curveadm/cli/cli"
 	comm "github.com/opencurve/curveadm/internal/common"
@@ -85,7 +88,6 @@ func readAndCheckDisks(curveadm *cli.CurveAdm, options commitOptions) (string, e
 
 func updateDisk(data string, curveadm *cli.CurveAdm) error {
 	var err error
-	// hosts_data := curveadm.Hosts()
 	hcs, err := hosts.ParseHosts(curveadm.Hosts())
 	if err != nil {
 		return err
@@ -95,66 +97,46 @@ func updateDisk(data string, curveadm *cli.CurveAdm) error {
 		return err
 	}
 
-	diskMapList := []map[string][]string{}
+	keySep := ":"
+	disksToSync := make(map[string]bool)
+
 	// write disk records
 	for _, hc := range hcs {
-		diskMap := make(map[string][]string)
 		for _, dc := range dcs {
-			toRecord := true
 			host := hc.GetHost()
 			device := dc.GetDevice()
-			diskOnlyHosts := dc.GetHostsOnly()
-			diskExcludeHosts := dc.GetHostsExclude()
+			diskOnlyHosts := utils.InterfaceSlice2Map(dc.GetHostsOnly())
+			diskExcludeHosts := utils.InterfaceSlice2Map(dc.GetHostsExclude())
+			fmt.Println(diskOnlyHosts, diskExcludeHosts)
 
-			if len(diskOnlyHosts) > 0 {
-				for _, h := range diskOnlyHosts {
-					if host != h {
-						toRecord = false
-						break
-					}
-				}
-			}
-			if len(diskExcludeHosts) > 0 {
-				for _, h := range diskExcludeHosts {
-					if host == h {
-						toRecord = false
-						break
-					}
-				}
-			}
-			if !toRecord {
+			if _, ok := diskOnlyHosts[host]; !ok && len(diskOnlyHosts) > 0 {
 				continue
 			}
-			if _, ok := diskMap[host]; !ok {
-				diskMap[host] = []string{device}
+			if _, ok := diskExcludeHosts[host]; ok {
+				continue
 			}
-			diskMap[host] = append(diskMap[host], device)
+
+			disksToSync[strings.Join([]string{host, device}, keySep)] = true
+
+			if diskRecords, err := curveadm.Storage().GetDisk("device", host, device); err != nil {
+				return err
+			} else if len(diskRecords) > 0 {
+				continue
+			}
+
 			if err := curveadm.Storage().SetDisk(host, device, dc.GetMountPoint(),
 				dc.GetContainerImage(), dc.GetFormatPercent()); err != nil {
 				return err
 			}
 		}
-		diskMapList = append(diskMapList, diskMap)
 	}
 
 	// sync disk records
 	diskRecords := curveadm.DiskRecords()
-	if len(diskRecords) != len(diskMapList) {
+	if len(diskRecords) != len(disksToSync) {
 		var diskToDeleteList []storage.Disk
 		for _, dr := range diskRecords {
-			diskItemToKeep := false
-			for _, dmap := range diskMapList {
-				if diskList, ok := dmap[dr.Host]; ok {
-					for _, dev := range diskList {
-						if dr.Device == dev {
-							diskItemToKeep = true
-							break
-						}
-					}
-					break
-				}
-			}
-			if !diskItemToKeep {
+			if _, ok := disksToSync[strings.Join([]string{dr.Host, dr.Device}, keySep)]; !ok {
 				diskToDeleteList = append(diskToDeleteList, dr)
 			}
 		}
@@ -172,7 +154,6 @@ func updateDisk(data string, curveadm *cli.CurveAdm) error {
 			}
 		}
 	}
-
 	return err
 }
 

@@ -140,9 +140,6 @@ func UpdateDisks(disksData, host, device, chunkserverId, oldDiskId string, curve
 			}
 
 			if d["device"] == disk.Device {
-				// fmt.Println("d out ", d)
-				// fmt.Println("exclude hosts", d[common.DISK_EXCLUDE_HOSTS])
-
 				if d[common.DISK_EXCLUDE_HOSTS] != nil {
 					// append old disk into hosts_exclude
 					disks.Disks[i][common.DISK_EXCLUDE_HOSTS] = append(
@@ -150,10 +147,11 @@ func UpdateDisks(disksData, host, device, chunkserverId, oldDiskId string, curve
 				} else {
 					// add old disk hosts_exclude
 					disks.Disks[i][common.DISK_EXCLUDE_HOSTS] = []string{host}
-					// remove old disk record
-					if err := curveadm.Storage().DeleteDisk(disk.Host, disk.Device); err != nil {
-						return err
-					}
+
+				}
+				// remove old disk record
+				if err := curveadm.Storage().DeleteDisk(disk.Host, disk.Device); err != nil {
+					return err
 				}
 			}
 		}

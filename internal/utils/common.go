@@ -216,6 +216,14 @@ func Slice2Map(s []string) map[string]bool {
 	return m
 }
 
+func InterfaceSlice2Map(s []interface{}) map[string]bool {
+	m := map[string]bool{}
+	for _, item := range s {
+		m[item.(string)] = true
+	}
+	return m
+}
+
 func Locate(s []string) map[string]int {
 	m := map[string]int{}
 	for i, item := range s {
