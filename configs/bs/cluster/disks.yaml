@@ -1,0 +1,18 @@
+global:
+  format_percent: 90
+
+disks:
+  - device: /dev/sdb1
+    mount: /data/chunkserver0
+  - device: /dev/sdc1
+    mount: /data/chunkserver1
+  - device: /dev/sdd1
+    mount: /data/chunkserver2
+    hosts_exclude:  # for the use case that all hosts have this disk device except some hosts
+      - curve-2
+      - curve-3
+  - device: /dev/sde1
+    mount: /data/chunkserver3
+    hosts_only:     # for the use case that only some hosts have this disk device
+      - curve-1
+      - curve-2
