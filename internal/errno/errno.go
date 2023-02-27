@@ -553,6 +553,7 @@ var (
 	ERR_INVALID_DISK_URI                       = EC(810003, "invalid disk uri")
 	ERR_REPLACE_THE_SAME_PHYSICAL_DISK         = EC(810004, "replace the same pyhsical disk")
 	ERR_REPLACE_DISK_USED_BY_OTHER_CHUNKSERVER = EC(810005, "replace disk used by other chunkserver")
+	ERR_REPLACE_DISK_SMALLER_SIZE              = EC(810005, "disk size is smaller")
 
 	// 900: others
 	ERR_CANCEL_OPERATION = EC(CODE_CANCEL_OPERATION, "cancel operation")

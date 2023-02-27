@@ -38,7 +38,7 @@
 package storage
 
 var (
-	// tables (hosts/clusters/containers(service)/clients/playrgound/audit/disk/disks/replacedisk)
+	// tables (hosts/clusters/containers(service)/clients/playrgound/audit/disk/disks/diskreplacement)
 	CREATE_VERSION_TABLE = `
 		CREATE TABLE IF NOT EXISTS version (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -74,6 +74,18 @@ var (
 			container_image_location TEXT NOT NULL,
 			direct_mount_in_container TEXT NOT NULL,
 			chunkserver_id TEXT NOT NULL,
+			lastmodified_time DATE NOT NULL
+		)
+	`
+
+	CREATE_DISK_REPLACEMENT_TABLE = `
+		CREATE TABLE IF NOT EXISTS diskreplacement (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			host TEXT NOT NULL,
+			device TEXT NOT NULL,
+			chunkserver_id TEXT NOT NULL,
+			progress TEXT NOT NULL,
+			status, TEXT NOT NULL,
 			lastmodified_time DATE NOT NULL
 		)
 	`
@@ -207,6 +219,21 @@ var (
 	DELETE_DISK_HOST = `DELETE from disk WHERE host = ?`
 
 	DELETE_DISK_HOST_DEVICE = `DELETE from disk WHERE host = ? AND device = ?`
+
+	// diskreplacement
+	INSERT_DISK_REPLACEMENT = `INSERT INTO diskreplacement(host, device, chunkserver_id) VALUES(?, ?, ?)`
+
+	SELECT_DISK_REPLACEMENT_ALL = `SELECT * FROM diskreplacement`
+
+	SELECT_DISK_REPLACEMENT_BY_CHUNKSERVER_ID = `SELECT * FROM diskreplacement WHERE chunkserver_id = ?`
+
+	SELECT_DISK_REPLACEMENT_BY_STATUS = `SELECT * FROM diskreplacement WHERE status = ?`
+
+	SET_DISK_REPLACEMENT_PROGRESS = `UPDATE diskreplacement SET progress = ?,
+	lastmodified_time = datetime('now','localtime') WHERE chunkserver_id = ?`
+
+	SET_DISK_REPLACEMENT_STATUS = `UPDATE diskreplacement SET status = ?,
+	lastmodified_time = datetime('now','localtime') WHERE chunkserver_id = ?`
 
 	// cluster
 	INSERT_CLUSTER = `INSERT INTO clusters(uuid, name, description, topology, pool, create_time)

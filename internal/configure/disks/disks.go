@@ -117,7 +117,6 @@ func UpdateDisks(disksData, host, device, chunkserverId, oldDiskId string, curve
 	if err != nil {
 		return err
 	}
-	// var diskId string
 
 	if len(diskRecords) == 0 {
 		chunkDisk, err := curveadm.Storage().GetDisk("service", chunkserverId)

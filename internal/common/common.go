@@ -54,11 +54,23 @@ const (
 	DISK_DEFAULT_NULL_URI                = DISK_DEFAULT_NULL_SIZE
 	DISK_DEFAULT_NULL_CONTAINER_IMAGE    = DISK_DEFAULT_NULL_SIZE
 	DISK_DEFAULT_NULL_CHUNKSERVER_ID     = DISK_DEFAULT_NULL_SIZE
+	DISK_QUERY_ALL                       = "all"
+	DISK_QUERY_HOST                      = "host"
+	DISK_QUERY_SERVICE                   = "service"
 	DISK_EXCLUDE_HOSTS                   = "hosts_exclude"
 	DISK_ONLY_HOSTS                      = "hosts_only"
 	DISK_DEVICE                          = "device"
 	DISK_CHUNKSERVER_ID                  = "disk_chunkserver_id"
-	DISK_ATTACHED_HOST                   = "disk_attached_host"
+
+	DISK_REPLACEMENT_STATUS_DONE           = "Done"
+	DISK_REPLACEMENT_STATUS_RUNNING        = "Running"
+	DISK_REPLACEMENT_STATUS_ABORT          = "Aborted"
+	DISK_REPLACEMENT_STATUS_FAIL           = "Failed"
+	DISK_REPLACEMENT_QUERY_ALL             = "all"
+	DISK_REPLACEMENT_QUERY_STATUS          = "status"
+	DISK_REPLACEMENT_QUERY_SERVICE         = "service"
+	DISK_REPLACEMENT_DEFAULT_NULL_PROGRESS = "0"
+	DISK_REPLACEMENT_DEFAULT_NULL_STATUS   = DISK_REPLACEMENT_STATUS_RUNNING
 
 	// format
 	KEY_ALL_FORMAT_STATUS = "ALL_FORMAT_STATUS"

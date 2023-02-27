@@ -65,6 +65,15 @@ type Disk struct {
 	LastmodifiedTime       time.Time
 }
 
+type DiskReplacement struct {
+	Id            int
+	Host          string
+	Device        string
+	ChunkServerID string
+	Progress      string
+	Status        string
+}
+
 type Cluster struct {
 	Id          int
 	UUId        string
@@ -146,6 +155,8 @@ func (s *Storage) init() error {
 	} else if err := s.execSQL(CREATE_DISKS_TABLE); err != nil {
 		return err
 	} else if err := s.execSQL(CREATE_DISK_TABLE); err != nil {
+		return err
+	} else if err := s.execSQL(CREATE_DISK_REPLACEMENT_TABLE); err != nil {
 		return err
 	} else if err := s.compatible(); err != nil {
 		return err
@@ -380,13 +391,13 @@ func (s *Storage) CleanDiskChunkServerId(serviceId string) error {
 func (s *Storage) GetDisk(filter string, args ...interface{}) ([]Disk, error) {
 	var query string
 	switch filter {
-	case "all":
+	case comm.DISK_QUERY_ALL:
 		query = SELECT_DISK_ALL
-	case "device":
+	case comm.DISK_DEVICE:
 		query = SELECT_DISK_BY_DEVICE_PATH
-	case "host":
+	case comm.DISK_QUERY_HOST:
 		query = SELECT_DISK_BY_HOST
-	case "service":
+	case comm.DISK_QUERY_SERVICE:
 		query = SELECT_DISK_BY_CHUNKSERVER_ID
 	default:
 		query = filter
@@ -418,6 +429,68 @@ func (s *Storage) GetDisk(filter string, args ...interface{}) ([]Disk, error) {
 		disks = append(disks, disk)
 	}
 	return disks, err
+}
+
+// replace disk
+func (s *Storage) SetDiskReplacement(host, device, chunkserverId string) error {
+	diskreplacements, err := s.GetDisk(SELECT_DISK_BY_DEVICE_PATH, host, device)
+	if err != nil {
+		return err
+	} else if len(diskreplacements) == 0 {
+		return s.execSQL(
+			INSERT_DISK,
+			host,
+			device,
+			chunkserverId,
+			comm.DISK_REPLACEMENT_DEFAULT_NULL_PROGRESS,
+			comm.DISK_REPLACEMENT_DEFAULT_NULL_STATUS,
+		)
+	}
+	return s.execSQL(SET_DISK, host, device, chunkserverId, diskreplacements[0].Id)
+}
+
+func (s *Storage) UpdateDiskReplacementProgress(chunkserverId, progress string) error {
+	return s.execSQL(SET_DISK_REPLACEMENT_PROGRESS, chunkserverId, progress)
+}
+
+func (s *Storage) UpdateDiskReplacementStatus(chunkserverId, status string) error {
+	return s.execSQL(SET_DISK_REPLACEMENT_STATUS, chunkserverId, status)
+}
+
+func (s *Storage) GetDiskReplacement(filter string, args ...interface{}) ([]DiskReplacement, error) {
+	var query string
+	switch filter {
+	case comm.DISK_REPLACEMENT_QUERY_ALL:
+		query = SELECT_DISK_REPLACEMENT_ALL
+	case comm.DISK_REPLACEMENT_QUERY_STATUS:
+		query = SELECT_DISK_REPLACEMENT_BY_STATUS
+	case comm.DISK_REPLACEMENT_QUERY_SERVICE:
+		query = SELECT_DISK_REPLACEMENT_BY_CHUNKSERVER_ID
+	default:
+		query = filter
+	}
+
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	rows, err := s.db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+	var replacements []DiskReplacement
+	var replacement DiskReplacement
+
+	for rows.Next() {
+		err = rows.Scan(&replacement.Id,
+			&replacement.Host,
+			&replacement.Device,
+			&replacement.ChunkServerID,
+			&replacement.Progress,
+			&replacement.Status)
+		replacements = append(replacements, replacement)
+	}
+	return replacements, err
 }
 
 // cluster
