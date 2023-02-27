@@ -95,7 +95,7 @@ func parseDisksData(data string) (*Disks, error) {
 	return disks, nil
 }
 
-func getDiskId(disk storage.Disk) (string, error) {
+func GetDiskId(disk storage.Disk) (string, error) {
 	uriSlice := strings.Split(disk.URI, "//")
 	if len(uriSlice) == 0 {
 		return "", errno.ERR_INVALID_DISK_URI.
@@ -113,85 +113,85 @@ func UpdateDisks(disksData, host, device, chunkserverId, oldDiskId string, curve
 	if err != nil {
 		return err
 	}
-	diskRecords, err := curveadm.Storage().GetDisk("device", host, device)
+	// diskRecords, err := curveadm.Storage().GetDisk("device", host, device)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// if len(diskRecords) == 0 {
+	chunkDisk, err := curveadm.Storage().GetDisk("service", chunkserverId)
 	if err != nil {
 		return err
 	}
+	if len(chunkDisk) == 0 {
+		return errno.ERR_DATABASE_EMPTY_QUERY_RESULT.
+			F("Chunkserver[ID: %s] has no related disk device", chunkserverId)
+	}
+	disk := chunkDisk[0]
+	var deviceExist bool
+	var diskIndex int
+	var diskMap map[string]interface{}
+	for i, d := range disks.Disks {
+		if d["device"] == device {
+			deviceExist = true
+			diskIndex = i
+			diskMap = d
+		}
 
-	if len(diskRecords) == 0 {
-		chunkDisk, err := curveadm.Storage().GetDisk("service", chunkserverId)
-		if err != nil {
-			return err
-		}
-		if len(chunkDisk) == 0 {
-			return errno.ERR_DATABASE_EMPTY_QUERY_RESULT.
-				F("Chunkserver[ID: %s] has no related disk device", chunkserverId)
-		}
-		disk := chunkDisk[0]
-		var deviceExist bool
-		var diskIndex int
-		var diskMap map[string]interface{}
-		for i, d := range disks.Disks {
-			if d["device"] == device {
-				deviceExist = true
-				diskIndex = i
-				diskMap = d
+		if d["device"] == disk.Device {
+			if d[common.DISK_EXCLUDE_HOSTS] != nil {
+				// append old disk into hosts_exclude
+				disks.Disks[i][common.DISK_EXCLUDE_HOSTS] = append(
+					d[common.DISK_EXCLUDE_HOSTS].([]interface{}), host)
+			} else {
+				// add old disk hosts_exclude
+				disks.Disks[i][common.DISK_EXCLUDE_HOSTS] = []string{host}
+
 			}
-
-			if d["device"] == disk.Device {
-				if d[common.DISK_EXCLUDE_HOSTS] != nil {
-					// append old disk into hosts_exclude
-					disks.Disks[i][common.DISK_EXCLUDE_HOSTS] = append(
-						d[common.DISK_EXCLUDE_HOSTS].([]interface{}), host)
-				} else {
-					// add old disk hosts_exclude
-					disks.Disks[i][common.DISK_EXCLUDE_HOSTS] = []string{host}
-
-				}
-				// remove old disk record
-				if err := curveadm.Storage().DeleteDisk(disk.Host, disk.Device); err != nil {
-					return err
-				}
+			// remove old disk record
+			if err := curveadm.Storage().DeleteDisk(disk.Host, disk.Device); err != nil {
+				return err
 			}
-		}
-
-		if deviceExist {
-			// append new disk into hosts_only
-			disks.Disks[diskIndex][common.DISK_ONLY_HOSTS] = append(
-				diskMap[common.DISK_ONLY_HOSTS].([]interface{}), host)
-		} else {
-			// add new disk hosts_only
-			diskStruct := map[string]interface{}{
-				"device":               device,
-				"mount":                disk.MountPoint,
-				common.DISK_ONLY_HOSTS: []string{host},
-			}
-			disks.Disks = append(disks.Disks, diskStruct)
-		}
-
-		// add new disk record
-		if err := curveadm.Storage().SetDisk(disk.Host, device, disk.MountPoint,
-			disk.ContainerImage, disk.FormatPercent); err != nil {
-			return err
-		}
-
-	} else {
-		disk := diskRecords[0]
-		// check if disk used by other chunkserver
-		if disk.ChunkServerID != chunkserverId {
-			return errno.ERR_REPLACE_DISK_USED_BY_OTHER_CHUNKSERVER.
-				F("The disk[%s:%s] is being used by chunkserver %s",
-					disk.Host, disk.Device, disk.ChunkServerID)
-		}
-
-		// check if the same phsycial disk
-		if diskId, err := getDiskId(disk); err != nil {
-			return err
-		} else if diskId == oldDiskId {
-			return errno.ERR_REPLACE_THE_SAME_PHYSICAL_DISK.
-				F("The new disk[UUID:%s] and the origin disk[UUID:%s] are the same", diskId, oldDiskId)
 		}
 	}
+
+	if deviceExist {
+		// append new disk into hosts_only
+		disks.Disks[diskIndex][common.DISK_ONLY_HOSTS] = append(
+			diskMap[common.DISK_ONLY_HOSTS].([]interface{}), host)
+	} else {
+		// add new disk hosts_only
+		diskStruct := map[string]interface{}{
+			"device":               device,
+			"mount":                disk.MountPoint,
+			common.DISK_ONLY_HOSTS: []string{host},
+		}
+		disks.Disks = append(disks.Disks, diskStruct)
+	}
+
+	// add new disk record
+	if err := curveadm.Storage().SetDisk(disk.Host, device, disk.MountPoint,
+		disk.ContainerImage, disk.FormatPercent); err != nil {
+		return err
+	}
+
+	// } else {
+	// 	disk := diskRecords[0]
+	// 	// check if disk used by other chunkserver
+	// 	if disk.ChunkServerID != chunkserverId {
+	// 		return errno.ERR_REPLACE_DISK_USED_BY_OTHER_CHUNKSERVER.
+	// 			F("The disk[%s:%s] is being used by chunkserver %s",
+	// 				disk.Host, disk.Device, disk.ChunkServerID)
+	// 	}
+
+	// 	// check if the same phsycial disk
+	// 	if diskId, err := GetDiskId(disk); err != nil {
+	// 		return err
+	// 	} else if diskId == oldDiskId {
+	// 		return errno.ERR_REPLACE_THE_SAME_PHYSICAL_DISK.
+	// 			F("The new disk[UUID:%s] and the origin disk[UUID:%s] are the same", diskId, oldDiskId)
+	// 	}
+	// }
 	// fmt.Println(disks.Disks)
 	diskm := Disks{disks.Global, disks.Disks}
 

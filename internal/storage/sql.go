@@ -83,6 +83,7 @@ var (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			host TEXT NOT NULL,
 			device TEXT NOT NULL,
+			former_diskid TEXT NOT NULL,
 			chunkserver_id TEXT NOT NULL,
 			progress TEXT NOT NULL,
 			status, TEXT NOT NULL,
@@ -220,14 +221,24 @@ var (
 
 	DELETE_DISK_HOST_DEVICE = `DELETE from disk WHERE host = ? AND device = ?`
 
-	// diskreplacement
-	INSERT_DISK_REPLACEMENT = `INSERT INTO diskreplacement(host, device, chunkserver_id) VALUES(?, ?, ?)`
+	// disk replacement
+	INSERT_DISK_REPLACEMENT = `INSERT INTO diskreplacement(
+		host,
+		device,
+		former_diskid,
+		chunkserver_id,
+		progress,
+		status,
+		) VALUES(?, ?, ?, ?, ?, ?), datetime('now','localtime'))`
 
 	SELECT_DISK_REPLACEMENT_ALL = `SELECT * FROM diskreplacement`
 
 	SELECT_DISK_REPLACEMENT_BY_CHUNKSERVER_ID = `SELECT * FROM diskreplacement WHERE chunkserver_id = ?`
 
 	SELECT_DISK_REPLACEMENT_BY_STATUS = `SELECT * FROM diskreplacement WHERE status = ?`
+
+	SET_DISK_REPLACEMENT_FORMER_ID = `UPDATE diskreplacement SET former_id = ?,
+	lastmodified_time = datetime('now','localtime') WHERE chunkserver_id = ?`
 
 	SET_DISK_REPLACEMENT_PROGRESS = `UPDATE diskreplacement SET progress = ?,
 	lastmodified_time = datetime('now','localtime') WHERE chunkserver_id = ?`

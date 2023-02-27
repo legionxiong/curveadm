@@ -96,7 +96,7 @@ func (s *compareDiskSize) Execute(ctx *context.Context) error {
 	}
 	if len(disks) == 0 {
 		return errno.ERR_DATABASE_EMPTY_QUERY_RESULT.
-			F("Disk with chunkserver[ID: %s] was not found", s.chunkserverId)
+			F("Disk of chunkserver[ID: %s] was not found", s.chunkserverId)
 	} else {
 		oldDisk := disks[0]
 		if oldDiskSize, err := strconv.ParseInt(oldDisk.Size, 10, 64); err != nil {
@@ -148,7 +148,7 @@ func NewReplaceDiskTask(curveadm *cli.CurveAdm, dc *topology.DeployConfig) (*tas
 		newDiskDevice: diskDevPath,
 		curveadm:      curveadm,
 	})
-	// 2. replace disk
+	// 3. replace disk
 	t.AddStep(&replaceDisk{
 		chunkserverId: chunkserverId,
 		diskDevPath:   diskDevPath,
