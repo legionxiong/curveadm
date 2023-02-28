@@ -34,7 +34,7 @@ import (
 	"github.com/opencurve/curveadm/internal/task/task"
 )
 
-type replaceDisk struct {
+type stopDiskReplacement struct {
 	chunkserverId string
 	diskDevPath   string
 	host          string
@@ -43,7 +43,7 @@ type replaceDisk struct {
 	curveadm      *cli.CurveAdm
 }
 
-func (s *replaceDisk) Execute(ctx *context.Context) error {
+func (s *stopDiskReplacement) Execute(ctx *context.Context) error {
 	if len(s.chunkserverId) == 0 {
 		return nil
 	}
@@ -54,7 +54,7 @@ func (s *replaceDisk) Execute(ctx *context.Context) error {
 	return nil
 }
 
-func NewReplaceDiskTask(curveadm *cli.CurveAdm, dc *topology.DeployConfig) (*task.Task, error) {
+func NewStopDiskReplacementTask(curveadm *cli.CurveAdm, dc *topology.DeployConfig) (*task.Task, error) {
 
 	chunkserverId := curveadm.MemStorage().Get(comm.DISK_CHUNKSERVER_ID).(string)
 	diskDevPath := curveadm.MemStorage().Get(comm.DISK_QUERY_DEVICE).(string)
@@ -86,7 +86,7 @@ func NewReplaceDiskTask(curveadm *cli.CurveAdm, dc *topology.DeployConfig) (*tas
 	})
 
 	// 2. replace disk
-	t.AddStep(&replaceDisk{
+	t.AddStep(&stopDiskReplacement{
 		chunkserverId: chunkserverId,
 		diskDevPath:   diskDevPath,
 		host:          dc.GetHost(),

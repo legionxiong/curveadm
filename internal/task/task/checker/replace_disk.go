@@ -205,7 +205,7 @@ func NewCheckDiskReplacementTask(curveadm *cli.CurveAdm, dc *topology.DeployConf
 		dc.GetHost(), newDiskDevice, chunkserverId)
 	t := task.NewTask("Check Disk Replacement", subname, hc.GetSSHConfig())
 
-	// 1. check if new disk size smaller than old disk size
+	// 1. check disk size
 	t.AddStep((&checkDiskSize{
 		host:          dc.GetHost(),
 		newDiskDevice: newDiskDevice,
@@ -213,7 +213,7 @@ func NewCheckDiskReplacementTask(curveadm *cli.CurveAdm, dc *topology.DeployConf
 		curveadm:      curveadm,
 	}))
 
-	// 2. check if disk used by other chunkserver
+	// 2. check disk used
 	t.AddStep(&checkDiskUsed{
 		host:          dc.GetHost(),
 		newDiskDevice: newDiskDevice,
@@ -221,7 +221,7 @@ func NewCheckDiskReplacementTask(curveadm *cli.CurveAdm, dc *topology.DeployConf
 		curveadm:      curveadm,
 	})
 
-	// 3. check if new disk and old oldDisk are the same
+	// 3. check the same disk
 	t.AddStep(&checkDiskTheSame{
 		host:          dc.GetHost(),
 		newDiskDevice: newDiskDevice,

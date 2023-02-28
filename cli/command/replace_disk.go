@@ -23,6 +23,10 @@
 package command
 
 import (
+	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/opencurve/curveadm/cli/cli"
 	comm "github.com/opencurve/curveadm/internal/common"
 	"github.com/opencurve/curveadm/internal/configure"
@@ -31,6 +35,7 @@ import (
 	"github.com/opencurve/curveadm/internal/errno"
 	"github.com/opencurve/curveadm/internal/playbook"
 	"github.com/opencurve/curveadm/internal/storage"
+	"github.com/opencurve/curveadm/internal/task/task/bs"
 	"github.com/opencurve/curveadm/internal/tui"
 	tuicomm "github.com/opencurve/curveadm/internal/tui/common"
 	cliutil "github.com/opencurve/curveadm/internal/utils"
@@ -47,11 +52,19 @@ const (
 
 var (
 	REPLACE_DISK_PLAYBOOK_STEPS = []int{
-		// playbook.STOP_SERVICE,
+		playbook.STOP_SERVICE,
 		playbook.CHECK_DISK_REPLACEMENT,
-		// playbook.FORMAT_CHUNKFILE_POOL,
+		playbook.FORMAT_CHUNKFILE_POOL,
 		// playbook.REPLACE_DISK,
-		// playbook.START_CHUNKSERVER,
+	}
+
+	REPLACE_DISK_STOP_PLAYBOOK_STEPS = []int{
+		playbook.STOP_FORMAT,
+		playbook.STOP_DISK_REPLACEMENT,
+	}
+
+	REPLACE_DISK_STATUS_PLAYBOOK_STEPS = []int{
+		playbook.GET_FORMAT_STATUS,
 	}
 )
 
@@ -59,7 +72,7 @@ type replaceDiskOptions struct {
 	chunkserverId       string
 	device              string
 	stopDiskReplacement bool
-	status              bool
+	replaceStatus       bool
 }
 
 func NewReplaceDiskCommand(curveadm *cli.CurveAdm) *cobra.Command {
@@ -80,7 +93,7 @@ func NewReplaceDiskCommand(curveadm *cli.CurveAdm) *cobra.Command {
 	flags.StringVarP(&options.chunkserverId, "chunkserver-id", "c", "", "Specify chunkserver id")
 	flags.StringVarP(&options.device, "device", "d", "", "Specify disk device path")
 	flags.BoolVar(&options.stopDiskReplacement, "stop", false, "Stop disk replacing progress")
-	flags.BoolVar(&options.status, "status", false, "Stop disk replacing progress")
+	flags.BoolVar(&options.replaceStatus, "status", false, "Stop disk replacing progress")
 
 	return cmd
 }
@@ -90,22 +103,20 @@ func genReplaceDiskPlaybook(curveadm *cli.CurveAdm, dcs []*topology.DeployConfig
 
 	steps := REPLACE_DISK_PLAYBOOK_STEPS
 	if options.stopDiskReplacement {
-		steps = FORMAT_STOP_PLAYBOOK_STEPS
+		steps = REPLACE_DISK_STOP_PLAYBOOK_STEPS
+	}
+	if options.replaceStatus {
+		steps = REPLACE_DISK_STATUS_PLAYBOOK_STEPS
 	}
 
 	pb := playbook.NewPlaybook(curveadm)
 
-	if containerId, err := curveadm.Storage().GetContainerId(options.chunkserverId); err != nil {
-		return pb, err
-	} else if len(containerId) == 0 {
-		return pb, errno.ERR_DATABASE_EMPTY_QUERY_RESULT.
-			F("The chunkserver[ID: %s] was not found or it has no related container", options.chunkserverId)
-	}
 	disks, err := curveadm.Storage().GetDisk("service", options.chunkserverId)
 	if err != nil {
 		return pb, err
 	}
 
+	disk := disks[0]
 	dcs = curveadm.FilterDeployConfig(dcs, topology.FilterOption{
 		Id:   options.chunkserverId,
 		Role: configure.ROLE_CHUNKSERVER,
@@ -119,13 +130,76 @@ func genReplaceDiskPlaybook(curveadm *cli.CurveAdm, dcs []*topology.DeployConfig
 	curveadm.MemStorage().Set(comm.DISK_QUERY_DEVICE, options.device)
 
 	for _, step := range steps {
-		pb.AddStep(&playbook.PlaybookStep{
-			Type:    step,
-			Configs: dcs,
-		})
+		if step == playbook.FORMAT_CHUNKFILE_POOL ||
+			step == playbook.GET_FORMAT_STATUS {
+			var fcs []*configure.FormatConfig
+			diskFormatInfo := fmt.Sprintf("%s:%s:%d", options.device,
+				disk.MountPoint, disk.FormatPercent)
+			fc, err := configure.NewFormatConfig(disk.ContainerImage,
+				disk.Host, diskFormatInfo)
+			if err != nil {
+				return pb, err
+			}
+
+			fc.UseDiskUri = true
+			fcs = append(fcs, fc)
+			pb.AddStep(&playbook.PlaybookStep{
+				Type:    step,
+				Configs: fcs,
+			})
+		} else {
+			pb.AddStep(&playbook.PlaybookStep{
+				Type:    step,
+				Configs: dcs,
+			})
+		}
 	}
 
 	return pb, nil
+}
+
+func updateDiskReplacementStatus(curveadm *cli.CurveAdm,
+	options replaceDiskOptions) error {
+	var formatPercent string
+	var currentFormat, targetFormt int
+	curveadmStorage := curveadm.Storage()
+	v := curveadm.MemStorage().Get(comm.KEY_ALL_FORMAT_STATUS)
+	diskReplacements, err := curveadmStorage.GetDiskReplacement(
+		comm.DISK_REPLACEMENT_QUERY_ALL)
+	if err != nil {
+		return err
+	}
+	if v != nil {
+		m := v.(map[string]bs.FormatStatus)
+		for _, status := range m {
+			formated := strings.Split(status.Formatted, "/")
+			if len(formated) == 2 {
+				currentFormat, _ = strconv.Atoi(formated[0])
+				targetFormt, _ = strconv.Atoi(formated[1])
+				percent, _ := strconv.ParseFloat(fmt.Sprintf(
+					"%.2f", float64(currentFormat)/float64(targetFormt)*100), 64)
+				if percent >= 100 {
+					percent = 100
+					// status = comm.DISK_REPLACEMENT_STATUS_DONE
+				}
+				formatPercent = fmt.Sprintf("%f%%", percent)
+				fmt.Println(formatPercent)
+				// curveadm.Storage().UpdateDiskReplacementProgress(chunkserverId, formatPercent)
+				break
+			}
+			for _, dr := range diskReplacements {
+				if dr.Host == status.Host && dr.Device == status.Device {
+					if err := curveadm.Storage().UpdateDiskReplacementProgress(
+						dr.ChunkServerID, formatPercent); err != nil {
+						return err
+					}
+					break
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 func runReplaceDisk(curveadm *cli.CurveAdm, options replaceDiskOptions) error {
@@ -138,32 +212,14 @@ func runReplaceDisk(curveadm *cli.CurveAdm, options replaceDiskOptions) error {
 			F("disks are empty")
 	}
 
-	// replace one disk each time
+	// replace one disk at a time
 	if diskReplacements, err = curveadmStorage.GetDiskReplacement(comm.DISK_REPLACEMENT_QUERY_STATUS,
 		comm.DISK_REPLACEMENT_STATUS_RUNNING); err != nil {
 		return err
 	}
-
-	if len(diskReplacements) > 0 {
+	if !options.replaceStatus && len(diskReplacements) > 0 {
 		return errno.ERR_REPLACE_DISK_TOO_MANY.
 			F("There is already a running disk replacement task, replace one disk at a time")
-	}
-
-	// show disk replacing status
-	if options.status {
-		if diskReplacements, err = curveadmStorage.GetDiskReplacement(
-			comm.DISK_REPLACEMENT_QUERY_ALL); err != nil {
-			return err
-		}
-		if options.chunkserverId != "" {
-			if diskReplacements, err = curveadmStorage.GetDiskReplacement(
-				comm.DISK_REPLACEMENT_QUERY_SERVICE, options.chunkserverId); err != nil {
-				return err
-			}
-		}
-		output := tui.FormatDiskReplacements(diskReplacements)
-		curveadm.WriteOut(output)
-		return nil
 	}
 
 	// check required options
@@ -171,7 +227,7 @@ func runReplaceDisk(curveadm *cli.CurveAdm, options replaceDiskOptions) error {
 		return errno.ERR_CHUNKSERVER_ID_IS_REQUIRED
 	}
 
-	if !options.stopDiskReplacement && !options.status {
+	if !options.stopDiskReplacement && !options.replaceStatus {
 		if options.device == "" {
 			return errno.ERR_DISK_PATH_IS_REQUIRED
 		}
@@ -179,14 +235,22 @@ func runReplaceDisk(curveadm *cli.CurveAdm, options replaceDiskOptions) error {
 
 	var disk storage.Disk
 	if options.chunkserverId != "" {
-		if disks, err := curveadmStorage.GetDisk(
-			comm.DISK_QUERY_SERVICE,
-			options.chunkserverId,
-		); err != nil {
+		if containerId, err := curveadm.Storage().GetContainerId(
+			options.chunkserverId); err != nil {
 			return err
-		} else if len(disks) > 0 {
-			disk = disks[0]
+		} else if containerId == comm.DISK_DEFAULT_NULL_CHUNKSERVER_ID {
+			return errno.ERR_DATABASE_EMPTY_QUERY_RESULT.
+				F("The chunkserver[ID: %s] was not found or it has no related container",
+					options.chunkserverId)
 		}
+		diskRecords, err := curveadmStorage.GetDisk(
+			comm.DISK_QUERY_SERVICE,
+			options.chunkserverId)
+		if err != nil {
+			return err
+		}
+
+		disk = diskRecords[0]
 		diskId, err := disks.GetDiskId(disk)
 		if err != nil {
 			return err
@@ -195,7 +259,7 @@ func runReplaceDisk(curveadm *cli.CurveAdm, options replaceDiskOptions) error {
 		if options.device != "" {
 			if err := curveadm.Storage().SetDiskReplacement(
 				disk.Host,
-				disk.Device,
+				options.device,
 				diskId,
 				disk.ChunkServerID,
 			); err != nil {
@@ -227,5 +291,28 @@ func runReplaceDisk(curveadm *cli.CurveAdm, options replaceDiskOptions) error {
 	}
 
 	// 4) run playground
-	return pb.Run()
+	if err := pb.Run(); err != nil {
+		return err
+	}
+
+	// show disk replacing status
+	if options.replaceStatus {
+		if err := updateDiskReplacementStatus(curveadm, options); err != nil {
+			return err
+		}
+		if diskReplacements, err = curveadmStorage.GetDiskReplacement(
+			comm.DISK_REPLACEMENT_QUERY_ALL); err != nil {
+			return err
+		}
+		if options.chunkserverId != "" {
+			if diskReplacements, err = curveadmStorage.GetDiskReplacement(
+				comm.DISK_REPLACEMENT_QUERY_SERVICE, options.chunkserverId); err != nil {
+				return err
+			}
+		}
+		output := tui.FormatDiskReplacements(diskReplacements)
+		curveadm.WriteOut(output)
+		return nil
+	}
+	return nil
 }

@@ -155,9 +155,9 @@ func runFormat(curveadm *cli.CurveAdm, options formatOptions) error {
 			if err != nil {
 				return err
 			}
+
 			fc.UseDiskUri = true
-			chunkserverId := dr.ChunkServerID
-			if len(chunkserverId) > 1 {
+			if len(dr.ChunkServerID) > 1 {
 				// skip formatting the disk with nonempty chunkserver id
 				continue
 			}

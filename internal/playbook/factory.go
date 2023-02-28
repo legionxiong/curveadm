@@ -82,7 +82,6 @@ const (
 	GET_CLIENT_STATUS
 	INSTALL_CLIENT
 	UNINSTALL_CLIENT
-	REPLACE_DISK
 
 	// bs
 	BALANCE_LEADER
@@ -119,6 +118,10 @@ const (
 
 	// STOP_FORMAT type stop formatting
 	STOP_FORMAT
+
+	// disk replacement
+	REPLACE_DISK
+	STOP_DISK_REPLACEMENT
 
 	// unknown
 	UNKNOWN
@@ -190,7 +193,7 @@ func (p *Playbook) createTasks(step *PlaybookStep) (*tasks.Tasks, error) {
 			t, err = checker.NewCleanEnvironmentTask(curveadm, config.GetDC(i))
 		case CHECK_DISK_REPLACEMENT:
 			t, err = checker.NewCheckDiskReplacementTask(curveadm, config.GetDC(i))
-		// common
+			// common
 		case PULL_IMAGE:
 			t, err = comm.NewPullImageTask(curveadm, config.GetDC(i))
 		case CREATE_CONTAINER:
@@ -208,6 +211,8 @@ func (p *Playbook) createTasks(step *PlaybookStep) (*tasks.Tasks, error) {
 			t, err = comm.NewStopServiceTask(curveadm, config.GetDC(i))
 		case REPLACE_DISK:
 			t, err = bs.NewReplaceDiskTask(curveadm, config.GetDC(i))
+		case STOP_DISK_REPLACEMENT:
+			t, err = bs.NewStopDiskReplacementTask(curveadm, config.GetDC(i))
 		case RESTART_SERVICE:
 			t, err = comm.NewRestartServiceTask(curveadm, config.GetDC(i))
 		case CREATE_PHYSICAL_POOL,
