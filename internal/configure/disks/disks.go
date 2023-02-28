@@ -30,6 +30,11 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+const (
+	DISK_URI_SEP           = "//"
+	DISK_URI_PROTO_FS_UUID = "fs:uuid"
+)
+
 type (
 	Disks struct {
 		Global map[string]interface{}   `mapstructure:"global"`
@@ -95,14 +100,18 @@ func parseDisksData(data string) (*Disks, error) {
 	return disks, nil
 }
 
+func GenDiskURI(proto, uri string) string {
+	return strings.Join([]string{proto, uri}, DISK_URI_SEP)
+}
+
 func GetDiskId(disk storage.Disk) (string, error) {
-	uriSlice := strings.Split(disk.URI, "//")
+	uriSlice := strings.Split(disk.URI, DISK_URI_SEP)
 	if len(uriSlice) == 0 {
 		return "", errno.ERR_INVALID_DISK_URI.
 			F("The disk[%s:%s] URI[%s] is invalid", disk.Host, disk.Device, disk.URI)
 	}
 
-	if uriSlice[0] == common.DISK_URI_PROTO_FS_UUID {
+	if uriSlice[0] == DISK_URI_PROTO_FS_UUID {
 		return uriSlice[1], nil
 	}
 	return "", nil

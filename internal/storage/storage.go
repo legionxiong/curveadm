@@ -52,26 +52,27 @@ type Disks struct {
 }
 
 type Disk struct {
-	Id                     int
-	Host                   string
-	Device                 string
-	Size                   string
-	URI                    string
-	MountPoint             string
-	FormatPercent          int
-	ContainerImage         string
-	DirectMountInContainer string
-	ChunkServerID          string
-	LastmodifiedTime       time.Time
+	Id               int
+	Host             string
+	Device           string
+	Size             string
+	URI              string
+	MountPoint       string
+	FormatPercent    int
+	ContainerImage   string
+	ChunkServerID    string
+	LastmodifiedTime time.Time
 }
 
 type DiskReplacement struct {
-	Id            int
-	Host          string
-	Device        string
-	ChunkServerID string
-	Progress      string
-	Status        string
+	Id               int
+	Host             string
+	Device           string
+	FormerDiskID     string
+	ChunkServerID    string
+	Progress         string
+	Status           string
+	LastmodifiedTime time.Time
 }
 
 type Cluster struct {
@@ -313,7 +314,7 @@ func (s *Storage) GetDisks() ([]Disks, error) {
 }
 
 // disk
-func (s *Storage) SetDisk(host, device, mount, containerImag string, format_percent int) error {
+func (s *Storage) SetDisk(host, device, mount, containerImage string, format_percent int) error {
 	disks, err := s.GetDisk(SELECT_DISK_BY_DEVICE_PATH, host, device)
 	if err != nil {
 		return err
@@ -326,12 +327,11 @@ func (s *Storage) SetDisk(host, device, mount, containerImag string, format_perc
 			comm.DISK_DEFAULT_NULL_URI,
 			mount,
 			format_percent,
-			containerImag,
-			comm.DISK_DEVICE_MOUNT_IN_CONTAINER_FALSE,
+			containerImage,
 			comm.DISK_DEFAULT_NULL_CHUNKSERVER_ID,
 		)
 	}
-	return s.execSQL(SET_DISK, mount, format_percent, containerImag, disks[0].Id)
+	return s.execSQL(SET_DISK, mount, format_percent, containerImage, disks[0].Id)
 }
 
 func (s *Storage) UpdateDiskURI(host, device, devUri string) error {
@@ -393,7 +393,7 @@ func (s *Storage) GetDisk(filter string, args ...interface{}) ([]Disk, error) {
 	switch filter {
 	case comm.DISK_QUERY_ALL:
 		query = SELECT_DISK_ALL
-	case comm.DISK_DEVICE:
+	case comm.DISK_QUERY_DEVICE:
 		query = SELECT_DISK_BY_DEVICE_PATH
 	case comm.DISK_QUERY_HOST:
 		query = SELECT_DISK_BY_HOST
@@ -423,7 +423,6 @@ func (s *Storage) GetDisk(filter string, args ...interface{}) ([]Disk, error) {
 			&disk.MountPoint,
 			&disk.FormatPercent,
 			&disk.ContainerImage,
-			&disk.DirectMountInContainer,
 			&disk.ChunkServerID,
 			&disk.LastmodifiedTime)
 		disks = append(disks, disk)
@@ -431,22 +430,23 @@ func (s *Storage) GetDisk(filter string, args ...interface{}) ([]Disk, error) {
 	return disks, err
 }
 
-// replace disk
-func (s *Storage) SetDiskReplacement(host, device, chunkserverId string) error {
+// disk replacement
+func (s *Storage) SetDiskReplacement(host, device, formerDiskId, chunkserverId string) error {
 	diskreplacements, err := s.GetDisk(SELECT_DISK_BY_DEVICE_PATH, host, device)
 	if err != nil {
 		return err
 	} else if len(diskreplacements) == 0 {
 		return s.execSQL(
-			INSERT_DISK,
+			INSERT_DISK_REPLACEMENT,
 			host,
 			device,
+			formerDiskId,
 			chunkserverId,
-			comm.DISK_REPLACEMENT_DEFAULT_NULL_PROGRESS,
-			comm.DISK_REPLACEMENT_DEFAULT_NULL_STATUS,
+			comm.DISK_REPLACEMENT_INIT_PROGRESS,
+			comm.DISK_REPLACEMENT_INIT_STATUS,
 		)
 	}
-	return s.execSQL(SET_DISK, host, device, chunkserverId, diskreplacements[0].Id)
+	return nil
 }
 
 func (s *Storage) UpdateDiskReplacementProgress(chunkserverId, progress string) error {
@@ -485,9 +485,12 @@ func (s *Storage) GetDiskReplacement(filter string, args ...interface{}) ([]Disk
 		err = rows.Scan(&replacement.Id,
 			&replacement.Host,
 			&replacement.Device,
+			&replacement.FormerDiskID,
 			&replacement.ChunkServerID,
 			&replacement.Progress,
-			&replacement.Status)
+			&replacement.Status,
+			&replacement.LastmodifiedTime,
+		)
 		replacements = append(replacements, replacement)
 	}
 	return replacements, err

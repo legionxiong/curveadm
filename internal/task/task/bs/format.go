@@ -29,8 +29,8 @@ import (
 	"time"
 
 	"github.com/opencurve/curveadm/cli/cli"
-	"github.com/opencurve/curveadm/internal/common"
 	"github.com/opencurve/curveadm/internal/configure"
+	"github.com/opencurve/curveadm/internal/configure/disks"
 	os "github.com/opencurve/curveadm/internal/configure/os"
 	"github.com/opencurve/curveadm/internal/configure/topology"
 	"github.com/opencurve/curveadm/internal/errno"
@@ -67,7 +67,7 @@ type (
 		host       string
 		device     string
 		size       string
-		uri        string
+		diskId     string
 		mountPoint string
 		curveadm   *cli.CurveAdm
 	}
@@ -177,7 +177,7 @@ func (s *step2UpdateDiskSizeUri) Execute(ctx *context.Context) error {
 	steps := []task.Step{}
 
 	var success bool
-	var uri string
+	var diskUri string
 
 	steps = append(steps, &step.ListBlockDevice{ // disk device size
 		Device:      []string{s.device},
@@ -192,11 +192,11 @@ func (s *step2UpdateDiskSizeUri) Execute(ctx *context.Context) error {
 		Format:      "UUID",
 		NoHeadings:  true,
 		Success:     &success,
-		Out:         &s.uri,
+		Out:         &s.diskId,
 		ExecOptions: curveadm.ExecOptions(),
 	})
 	steps = append(steps, &step.Lambda{
-		Lambda: checkDeviceUUID(s.host, s.device, &success, &s.uri),
+		Lambda: checkDeviceUUID(s.host, s.device, &success, &s.diskId),
 	})
 
 	for _, step := range steps {
@@ -206,14 +206,14 @@ func (s *step2UpdateDiskSizeUri) Execute(ctx *context.Context) error {
 		}
 	}
 	if len(s.mountPoint) > 1 {
-		uri = strings.Join([]string{common.DISK_URI_PROTO_FS_UUID, s.uri}, "//")
+		diskUri = disks.GenDiskURI(disks.DISK_URI_PROTO_FS_UUID, s.diskId)
 	}
 
 	if err := curveadm.Storage().UpdateDiskSize(s.host, s.device, s.size); err != nil {
 		return err
 	}
 
-	if err := curveadm.Storage().UpdateDiskURI(s.host, s.device, uri); err != nil {
+	if err := curveadm.Storage().UpdateDiskURI(s.host, s.device, diskUri); err != nil {
 		return err
 	}
 	return nil

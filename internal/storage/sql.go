@@ -72,7 +72,6 @@ var (
 			disk_format_mount_point TEXT NOT NULL,
 			format_percent TEXT NOT NULL,
 			container_image_location TEXT NOT NULL,
-			direct_mount_in_container TEXT NOT NULL,
 			chunkserver_id TEXT NOT NULL,
 			lastmodified_time DATE NOT NULL
 		)
@@ -83,10 +82,10 @@ var (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			host TEXT NOT NULL,
 			device TEXT NOT NULL,
-			former_diskid TEXT NOT NULL,
+			former_disk_id TEXT NOT NULL,
 			chunkserver_id TEXT NOT NULL,
 			progress TEXT NOT NULL,
-			status, TEXT NOT NULL,
+			status TEXT NOT NULL,
 			lastmodified_time DATE NOT NULL
 		)
 	`
@@ -190,10 +189,9 @@ var (
 		disk_format_mount_point,
 		format_percent,
 		container_image_location,
-		direct_mount_in_container,
 		chunkserver_id,
 		lastmodified_time
-		) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now','localtime'))`
+		) VALUES(?, ?, ?, ?, ?, ?, ?, ?, datetime('now','localtime'))`
 
 	SET_DISK = `UPDATE disk SET disk_format_mount_point = ?, format_percent = ?,
 	container_image_location = ?,lastmodified_time = datetime('now','localtime') WHERE id = ?`
@@ -225,11 +223,12 @@ var (
 	INSERT_DISK_REPLACEMENT = `INSERT INTO diskreplacement(
 		host,
 		device,
-		former_diskid,
+		former_disk_id,
 		chunkserver_id,
 		progress,
 		status,
-		) VALUES(?, ?, ?, ?, ?, ?), datetime('now','localtime'))`
+		lastmodified_time
+		) VALUES(?, ?, ?, ?, ?, ?, datetime('now','localtime'))`
 
 	SELECT_DISK_REPLACEMENT_ALL = `SELECT * FROM diskreplacement`
 

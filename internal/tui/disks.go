@@ -29,7 +29,7 @@ func FormatDisks(diskRecords []storage.Disk) string {
 		"Device Size",
 		"Device URI",
 		"Disk Format Mount Point",
-		"Chunkserver ID",
+		"Service ID",
 	}
 	first, second := tuicommon.FormatTitle(title)
 	lines = append(lines, first)

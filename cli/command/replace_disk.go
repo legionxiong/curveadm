@@ -26,6 +26,7 @@ import (
 	"github.com/opencurve/curveadm/cli/cli"
 	comm "github.com/opencurve/curveadm/internal/common"
 	"github.com/opencurve/curveadm/internal/configure"
+	"github.com/opencurve/curveadm/internal/configure/disks"
 	"github.com/opencurve/curveadm/internal/configure/topology"
 	"github.com/opencurve/curveadm/internal/errno"
 	"github.com/opencurve/curveadm/internal/playbook"
@@ -48,8 +49,8 @@ var (
 	REPLACE_DISK_PLAYBOOK_STEPS = []int{
 		// playbook.STOP_SERVICE,
 		playbook.CHECK_DISK_REPLACEMENT,
-		playbook.FORMAT_CHUNKFILE_POOL,
-		playbook.REPLACE_DISK,
+		// playbook.FORMAT_CHUNKFILE_POOL,
+		// playbook.REPLACE_DISK,
 		// playbook.START_CHUNKSERVER,
 	}
 )
@@ -115,7 +116,7 @@ func genReplaceDiskPlaybook(curveadm *cli.CurveAdm, dcs []*topology.DeployConfig
 	}
 
 	curveadm.MemStorage().Set(comm.DISK_CHUNKSERVER_ID, options.chunkserverId)
-	curveadm.MemStorage().Set(comm.DISK_DEVICE, options.device)
+	curveadm.MemStorage().Set(comm.DISK_QUERY_DEVICE, options.device)
 
 	for _, step := range steps {
 		pb.AddStep(&playbook.PlaybookStep{
@@ -145,7 +146,7 @@ func runReplaceDisk(curveadm *cli.CurveAdm, options replaceDiskOptions) error {
 
 	if len(diskReplacements) > 0 {
 		return errno.ERR_REPLACE_DISK_TOO_MANY.
-			F("There is a running disk replacement task, replace one disk each time")
+			F("There is already a running disk replacement task, replace one disk at a time")
 	}
 
 	// show disk replacing status
@@ -166,7 +167,7 @@ func runReplaceDisk(curveadm *cli.CurveAdm, options replaceDiskOptions) error {
 	}
 
 	// check required options
-	if options.stopDiskReplacement && options.chunkserverId == "" || options.device != "" {
+	if options.chunkserverId == "" && (options.stopDiskReplacement || options.device != "") {
 		return errno.ERR_CHUNKSERVER_ID_IS_REQUIRED
 	}
 
@@ -186,11 +187,16 @@ func runReplaceDisk(curveadm *cli.CurveAdm, options replaceDiskOptions) error {
 		} else if len(disks) > 0 {
 			disk = disks[0]
 		}
+		diskId, err := disks.GetDiskId(disk)
+		if err != nil {
+			return err
+		}
 		// write disk replacement record
 		if options.device != "" {
 			if err := curveadm.Storage().SetDiskReplacement(
 				disk.Host,
 				disk.Device,
+				diskId,
 				disk.ChunkServerID,
 			); err != nil {
 				return err

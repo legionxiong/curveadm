@@ -549,12 +549,12 @@ var (
 	// 810: replace disk
 	ERR_CHUNKSERVER_ID_IS_REQUIRED             = EC(810000, "chunkserver id is required")
 	ERR_DISK_PATH_IS_REQUIRED                  = EC(810001, "disk device patch is required")
-	ERR_DISK_WITH_CHUNKSERVER_NOT_EXISTS       = EC(810002, "chunkserver id not exist")
+	ERR_DISK_NOT_EMPTY                         = EC(810002, "not empty disk")
 	ERR_INVALID_DISK_URI                       = EC(810003, "invalid disk uri")
-	ERR_REPLACE_THE_SAME_PHYSICAL_DISK         = EC(810004, "replace the same pyhsical disk")
-	ERR_REPLACE_DISK_USED_BY_OTHER_CHUNKSERVER = EC(810005, "replace disk used by other chunkserver")
-	ERR_REPLACE_DISK_SMALLER_SIZE              = EC(810005, "disk size is smaller")
-	ERR_REPLACE_DISK_TOO_MANY                  = EC(810005, "too many disk replacement")
+	ERR_REPLACE_THE_SAME_PHYSICAL_DISK         = EC(810004, "same pyhsical disk")
+	ERR_REPLACE_DISK_USED_BY_OTHER_CHUNKSERVER = EC(810005, "disk already used")
+	ERR_REPLACE_DISK_SMALLER_SIZE              = EC(810006, "smaller disk size")
+	ERR_REPLACE_DISK_TOO_MANY                  = EC(810007, "too many disk replacement")
 
 	// 900: others
 	ERR_CANCEL_OPERATION = EC(CODE_CANCEL_OPERATION, "cancel operation")
