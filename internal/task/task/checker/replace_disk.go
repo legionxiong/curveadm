@@ -68,19 +68,7 @@ type checkDiskEmpty struct {
 }
 
 func (s *checkDiskSize) Execute(ctx *context.Context) error {
-	// curveadm := s.curveadm
-	// steps := []task.Step{}
-
 	var success bool
-	// steps = append(steps, &step.ListBlockDevice{ // disk device size
-	// 	Device:      []string{s.newDiskDevice},
-	// 	Format:      "SIZE -b",
-	// 	NoHeadings:  true,
-	// 	Success:     &success,
-	// 	Out:         &s.newDiskSize,
-	// 	ExecOptions: curveadm.ExecOptions(),
-	// })
-
 	step := &step.ListBlockDevice{ // disk device size
 		Device:      []string{s.newDiskDevice},
 		Format:      "SIZE -b",
@@ -89,11 +77,10 @@ func (s *checkDiskSize) Execute(ctx *context.Context) error {
 		Out:         &s.newDiskSize,
 		ExecOptions: s.curveadm.ExecOptions(),
 	}
-	// for _, step := range steps {
+
 	if err := step.Execute(ctx); err != nil {
 		return err
 	}
-	// }
 
 	if !success {
 		return errno.ERR_LIST_BLOCK_DEVICES_FAILED.
@@ -136,34 +123,6 @@ func (s *checkDiskUsed) Execute(ctx *context.Context) error {
 	return nil
 }
 
-func (s *checkDiskEmpty) Execute(ctx *context.Context) error {
-	// steps := []task.Step{}
-	var success bool
-	step := &step.ListBlockDevice{ // disk device filesystem
-		Device:      []string{s.newDiskDevice},
-		Format:      "FSTYPE",
-		NoHeadings:  true,
-		Success:     &success,
-		Out:         &s.fsType,
-		ExecOptions: s.curveadm.ExecOptions(),
-	}
-
-	if err := step.Execute(ctx); err != nil {
-		return err
-	}
-	if !success {
-		return errno.ERR_LIST_BLOCK_DEVICES_FAILED.
-			F("Get disk[%s:%s] filesystem type failed", s.host, s.newDiskDevice)
-	}
-
-	if s.fsType != "" {
-		return errno.ERR_DISK_NOT_EMPTY.
-			F("The disk[%s:%s] has %s filesystem",
-				s.host, s.newDiskDevice, s.fsType)
-	}
-	return nil
-}
-
 func (s *checkDiskTheSame) Execute(ctx *context.Context) error {
 	var success bool
 	step := &step.ListBlockDevice{ // disk device uuid
@@ -195,6 +154,33 @@ func (s *checkDiskTheSame) Execute(ctx *context.Context) error {
 	return nil
 }
 
+func (s *checkDiskEmpty) Execute(ctx *context.Context) error {
+	var success bool
+	step := &step.ListBlockDevice{ // disk device filesystem
+		Device:      []string{s.newDiskDevice},
+		Format:      "FSTYPE",
+		NoHeadings:  true,
+		Success:     &success,
+		Out:         &s.fsType,
+		ExecOptions: s.curveadm.ExecOptions(),
+	}
+
+	if err := step.Execute(ctx); err != nil {
+		return err
+	}
+	if !success {
+		return errno.ERR_LIST_BLOCK_DEVICES_FAILED.
+			F("Get disk[%s:%s] filesystem type failed", s.host, s.newDiskDevice)
+	}
+
+	if s.fsType != "" {
+		return errno.ERR_DISK_NOT_EMPTY.
+			F("The disk[%s:%s] has %s filesystem",
+				s.host, s.newDiskDevice, s.fsType)
+	}
+	return nil
+}
+
 func NewCheckDiskReplacementTask(curveadm *cli.CurveAdm, dc *topology.DeployConfig) (*task.Task, error) {
 	var oldDisk storage.Disk
 	hc, err := curveadm.GetHost(dc.GetHost())
@@ -218,16 +204,6 @@ func NewCheckDiskReplacementTask(curveadm *cli.CurveAdm, dc *topology.DeployConf
 	subname := fmt.Sprintf("host=%s device=%s, chunkserverId=%s",
 		dc.GetHost(), newDiskDevice, chunkserverId)
 	t := task.NewTask("Check Disk Replacement", subname, hc.GetSSHConfig())
-
-	// var diskUuid string
-	// // 1. get new disk uuid
-	// t.AddStep(&step.ListBlockDevice{
-	// 	Device:      []string{newDiskDevice},
-	// 	Format:      "UUID",
-	// 	NoHeadings:  true,
-	// 	Out:         &diskUuid,
-	// 	ExecOptions: curveadm.ExecOptions(),
-	// })
 
 	// 1. check if new disk size smaller than old disk size
 	t.AddStep((&checkDiskSize{
