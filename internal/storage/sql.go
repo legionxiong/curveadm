@@ -236,6 +236,8 @@ var (
 
 	SELECT_DISK_REPLACEMENT_BY_STATUS = `SELECT * FROM diskreplacement WHERE status = ?`
 
+	SELECT_DISK_REPLACEMENT_BY_DEVICE = `SELECT * FROM diskreplacement WHERE host = ? AND device = ?`
+
 	SET_DISK_REPLACEMENT_FORMER_ID = `UPDATE diskreplacement SET former_id = ?,
 	lastmodified_time = datetime('now','localtime') WHERE chunkserver_id = ?`
 

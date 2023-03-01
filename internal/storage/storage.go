@@ -449,12 +449,12 @@ func (s *Storage) SetDiskReplacement(host, device, formerDiskId, chunkserverId s
 	return nil
 }
 
-func (s *Storage) UpdateDiskReplacementProgress(chunkserverId, progress string) error {
-	return s.execSQL(SET_DISK_REPLACEMENT_PROGRESS, chunkserverId, progress)
+func (s *Storage) UpdateDiskReplacementProgress(progress, chunkserverId string) error {
+	return s.execSQL(SET_DISK_REPLACEMENT_PROGRESS, progress, chunkserverId)
 }
 
-func (s *Storage) UpdateDiskReplacementStatus(chunkserverId, status string) error {
-	return s.execSQL(SET_DISK_REPLACEMENT_STATUS, chunkserverId, status)
+func (s *Storage) UpdateDiskReplacementStatus(status, chunkserverId string) error {
+	return s.execSQL(SET_DISK_REPLACEMENT_STATUS, status, chunkserverId)
 }
 
 func (s *Storage) GetDiskReplacement(filter string, args ...interface{}) ([]DiskReplacement, error) {
@@ -464,6 +464,8 @@ func (s *Storage) GetDiskReplacement(filter string, args ...interface{}) ([]Disk
 		query = SELECT_DISK_REPLACEMENT_ALL
 	case comm.DISK_REPLACEMENT_QUERY_STATUS:
 		query = SELECT_DISK_REPLACEMENT_BY_STATUS
+	case comm.DISK_REPLACEMENT_QUERY_DEVICE:
+		query = SELECT_DISK_REPLACEMENT_BY_DEVICE
 	case comm.DISK_REPLACEMENT_QUERY_SERVICE:
 		query = SELECT_DISK_REPLACEMENT_BY_CHUNKSERVER_ID
 	default:
