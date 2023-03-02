@@ -66,7 +66,7 @@ type CurveAdm struct {
 	// properties (hosts/cluster)
 	hosts               string         // hosts
 	disks               string         // disks
-	diskRecords         []storage.Disk // disk
+	diskRecords         []storage.Disk // disk list
 	clusterId           int            // current cluster id
 	clusterUUId         string         // current cluster uuid
 	clusterName         string         // current cluster name

@@ -34,42 +34,49 @@ const (
 var (
 	itemset = comm.NewItemSet()
 
-	CONFIG_DEVICE = itemset.Insert(
-		common.DISK_DEVICE,
+	CONFIG_DISK_DEVICE = itemset.Insert(
+		common.DISK_QUERY_DISK_DEVICE,
 		comm.REQUIRE_STRING,
 		false,
 		nil,
 	)
 
-	CONFIG_MOUNT_POINT = itemset.Insert(
+	DISK_QUERY_DISK_DEVICE = itemset.Insert(
 		common.DISK_FORMAT_MOUNT_POINT,
 		comm.REQUIRE_STRING,
 		false,
 		nil,
 	)
 
-	CONFIG_FORMAT_PERCENT = itemset.Insert(
+	CONFIG_GLOBAL_FORMAT_PERCENT = itemset.Insert(
 		common.DISK_FORMAT_PERCENT,
 		comm.REQUIRE_POSITIVE_INTEGER,
 		false,
 		DEFAULT_FORMAT_PERCENT,
 	)
 
-	CONFIG_HOSTS_EXCLUDE = itemset.Insert(
-		common.DISK_EXCLUDE_HOSTS,
+	CONFIG_GLOBAL_HOST = itemset.Insert(
+		common.DISK_HOST,
 		comm.REQUIRE_SLICE,
 		false,
 		nil,
 	)
 
-	CONFIG_HOSTS_ONLY = itemset.Insert(
-		common.DISK_ONLY_HOSTS,
+	CONFIG_DISK_HOST_EXCLUDE = itemset.Insert(
+		common.DISK_HOST_EXCLUDE,
 		comm.REQUIRE_SLICE,
 		false,
 		nil,
 	)
 
-	CONFIG_CONTAINER_IMAGE = itemset.Insert(
+	CONFIG_DISK_HOST_ONLY = itemset.Insert(
+		common.DISK_HOST_ONLY,
+		comm.REQUIRE_SLICE,
+		false,
+		nil,
+	)
+
+	CONFIG_GLOBAL_CONTAINER_IMAGE = itemset.Insert(
 		common.DISK_FORMAT_CONTAINER_IMAGE,
 		comm.REQUIRE_STRING,
 		false,

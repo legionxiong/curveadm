@@ -25,16 +25,19 @@ package disks
 import (
 	"bytes"
 
+	"github.com/opencurve/curveadm/cli/cli"
 	"github.com/opencurve/curveadm/internal/build"
+	"github.com/opencurve/curveadm/internal/common"
 	"github.com/opencurve/curveadm/internal/configure/hosts"
 	"github.com/opencurve/curveadm/internal/errno"
+	"github.com/opencurve/curveadm/internal/utils"
 	"github.com/spf13/viper"
 )
 
 type (
 	Disks struct {
 		Global map[string]interface{}   `mapstructure:"global"`
-		Disks  []map[string]interface{} `mapstructure:"disks"`
+		Disk   []map[string]interface{} `mapstructure:"disk"`
 	}
 
 	DiskConfig struct {
@@ -44,6 +47,7 @@ type (
 )
 
 func (dc *DiskConfig) Build() error {
+	diskHost := dc.GetHost()
 	for key, value := range dc.config {
 		if itemset.Get(key) == nil {
 			return errno.ERR_UNSUPPORT_DISKS_CONFIGURE_ITEM.
@@ -56,13 +60,36 @@ func (dc *DiskConfig) Build() error {
 			} else {
 				dc.config[key] = v
 			}
+		} else {
+
+			if key == common.DISK_HOST {
+				hostOnly := dc.GetHostOnly()
+				if len(hostOnly) > 0 {
+					dc.config[common.DISK_HOST] = hostOnly
+				}
+
+				hostExclude := dc.GetHostExclude()
+				if len(hostExclude) > 0 {
+					diskHost := []string{}
+					hostExcludeMap := utils.Slice2Map(hostExclude)
+					for _, h := range diskHost {
+						if _, ok := hostExcludeMap[h]; !ok {
+							diskHost = append(diskHost, h)
+						}
+					}
+					dc.config[common.DISK_HOST] = diskHost
+				}
+			}
 		}
 	}
 
-	if len(dc.GetDevice()) == 0 {
+	if diskHost == nil {
+		return errno.ERR_HOST_FIELD_MISSING.
+			F("disks[%d].host = nil", dc.sequence)
+	} else if dc.GetDevice() == "" {
 		return errno.ERR_DEVICE_FIELD_MISSING.
 			F("disks[%d].device = nil", dc.sequence)
-	} else if len(dc.GetMountPoint()) == 0 {
+	} else if dc.GetMountPoint() == "" {
 		return errno.ERR_MOUNT_POINT_FIELD_MISSING.
 			F("disks[%d].mount = nil", dc.sequence)
 	} else if dc.GetFormatPercent() > 100 {
@@ -80,11 +107,7 @@ func NewDiskConfig(sequence int, config map[string]interface{}) *DiskConfig {
 	}
 }
 
-func ParseDisks(data string) ([]*DiskConfig, error) {
-	if len(data) == 0 {
-		return nil, errno.ERR_EMPTY_DISKS
-	}
-
+func ParseDisks(data string, curveadm *cli.CurveAdm) ([]*DiskConfig, error) {
 	parser := viper.NewWithOptions(viper.KeyDelimiter("::"))
 	parser.SetConfigType("yaml")
 	err := parser.ReadConfig(bytes.NewBuffer([]byte(data)))
@@ -97,11 +120,10 @@ func ParseDisks(data string) ([]*DiskConfig, error) {
 		return nil, errno.ERR_PARSE_DISKS_FAILED.E(err)
 	}
 
-	dcs := []*DiskConfig{}
+	var dcs []*DiskConfig
 	exist := map[string]bool{}
-	for i, disk := range disks.Disks {
+	for i, disk := range disks.Disk {
 		disk = hosts.NewIfNil(disk)
-
 		hosts.Merge(disks.Global, disk)
 		dc := NewDiskConfig(i, disk)
 		err = dc.Build()
@@ -117,16 +139,17 @@ func ParseDisks(data string) ([]*DiskConfig, error) {
 			return nil, errno.ERR_DUPLICATE_DISK.
 				F("duplicate disk mount point: %s", dc.GetMountPoint())
 		}
-		hostsExclude := dc.GetHostsExclude()
-		hostsOnly := dc.GetHostsOnly()
-		if len(hostsExclude) > 0 && len(hostsOnly) > 0 {
+		hostExclude := dc.GetHostExclude()
+		hostOnly := dc.GetHostOnly()
+		if len(hostExclude) > 0 && len(hostOnly) > 0 {
 			return nil, errno.ERR_ONLY_EXCLUDE_HOSTS.
-				F("conflict fields hosts_exclude: %s and hosts_only: %s", hostsExclude, hostsOnly)
+				F("conflict fields hosts_exclude: %s and hosts_only: %s", hostExclude, hostOnly)
 		}
 		dcs = append(dcs, dc)
 		exist[dc.GetDevice()] = true
 		exist[dc.GetMountPoint()] = true
 	}
+
 	build.DEBUG(build.DEBUG_DISKS, disks)
 	return dcs, nil
 }

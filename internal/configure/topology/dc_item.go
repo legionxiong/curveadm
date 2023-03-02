@@ -68,9 +68,10 @@ type (
 )
 
 // you should add config item to itemset iff you want to:
-//   (1) check the configuration item value, like type, valid value OR
-//   (2) filter out the configuration item for service config OR
-//   (3) set the default value for configuration item
+//
+//	(1) check the configuration item value, like type, valid value OR
+//	(2) filter out the configuration item for service config OR
+//	(3) set the default value for configuration item
 var (
 	itemset = &itemSet{
 		items:    []*item{},
@@ -96,7 +97,7 @@ var (
 		DEFAULT_REPORT_USAGE,
 	)
 
-	CONFIG_CONTAINER_IMAGE = itemset.insert(
+	CONFIG_GLOBAL_CONTAINER_IMAGE = itemset.insert(
 		"container_image",
 		REQUIRE_STRING,
 		true,

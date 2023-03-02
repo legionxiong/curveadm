@@ -299,8 +299,7 @@ var (
 	// 322: configure (disks.yaml: parse failed)
 	ERR_DISKS_FILE_NOT_FOUND   = EC(322000, "disks file not found")
 	ERR_READ_DISKS_FILE_FAILED = EC(322001, "read disks file failed")
-	ERR_EMPTY_DISKS            = EC(322002, "disks is empty")
-	ERR_PARSE_DISKS_FAILED     = EC(322003, "parse disks failed")
+	ERR_PARSE_DISKS_FAILED     = EC(322002, "parse disks failed")
 
 	// 323: configure (disks.yaml: invalid configure value)
 	ERR_UNSUPPORT_DISKS_CONFIGURE_ITEM = EC(323000, "unsupport disks configure item")
@@ -310,7 +309,7 @@ var (
 	ERR_DUPLICATE_DISK_MOUNT_POINT     = EC(323005, "disk mount point is duplicated")
 	ERR_DISK_FORMAT_PERCENT_EXCEED_100 = EC(323006, "disk format percent is greater than 100")
 	ERR_ONLY_EXCLUDE_HOSTS             = EC(323007, "either hosts_only or hosts_exclude cloud be set, not both")
-	ERR_DISK_CHUNKSER_ID_NONEMPTY      = EC(108001, "exclude disk with nonempty chunkserver id")
+	ERR_DELETE_SERVICE_BINDING_DISK    = EC(108001, "remove service binding disk is not allowed")
 
 	// 330: configure (topology.yaml: parse failed)
 	ERR_TOPOLOGY_FILE_NOT_FOUND         = EC(330000, "topology file not found")

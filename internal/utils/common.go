@@ -208,18 +208,10 @@ func NewCommand(format string, a ...interface{}) *exec.Cmd {
 	return exec.Command(args[0], args[1:]...)
 }
 
-func Slice2Map(s []string) map[string]bool {
-	m := map[string]bool{}
-	for _, item := range s {
+func Slice2Map[T comparable](t []T) map[T]bool {
+	m := map[T]bool{}
+	for _, item := range t {
 		m[item] = true
-	}
-	return m
-}
-
-func InterfaceSlice2Map(s []interface{}) map[string]bool {
-	m := map[string]bool{}
-	for _, item := range s {
-		m[item.(string)] = true
 	}
 	return m
 }

@@ -302,10 +302,10 @@ func (s *Storage) GetDisks() ([]Disks, error) {
 
 // disk
 func (s *Storage) SetDisk(host, device, mount, containerImage string, formatPercent int) error {
-	disks, err := s.GetDisk(SELECT_DISK_BY_DEVICE_PATH, host, device)
+	diskRecords, err := s.GetDisk(SELECT_DISK_BY_DEVICE_PATH, host, device)
 	if err != nil {
 		return err
-	} else if len(disks) == 0 {
+	} else if len(diskRecords) == 0 {
 		return s.execSQL(
 			INSERT_DISK,
 			host,
@@ -318,7 +318,7 @@ func (s *Storage) SetDisk(host, device, mount, containerImage string, formatPerc
 			comm.DISK_DEFAULT_NULL_CHUNKSERVER_ID,
 		)
 	}
-	return s.execSQL(SET_DISK, mount, formatPercent, containerImage, disks[0].Id)
+	return s.execSQL(SET_DISK, mount, formatPercent, containerImage, diskRecords[0].Id)
 }
 
 func (s *Storage) UpdateDiskURI(host, device, devUri string) error {
@@ -347,23 +347,23 @@ func (s *Storage) DeleteDisk(host, device string) error {
 
 func (s *Storage) GetDiskByDiskFormatMountPoint(host, mountPoint string) (Disk, error) {
 	var disk Disk
-	disks, err := s.GetDisk(SELECT_DISK_BY_DISK_FORMAT_MOUNTPOINT, host, mountPoint)
-	if len(disks) == 0 {
+	diskRecords, err := s.GetDisk(SELECT_DISK_BY_DISK_FORMAT_MOUNTPOINT, host, mountPoint)
+	if len(diskRecords) == 0 {
 		return disk, errno.ERR_DATABASE_EMPTY_QUERY_RESULT.
 			F("The disk[host=%s, disk_format_mount_point=%s] was not found in database.",
 				host, mountPoint)
 	}
-	disk = disks[0]
+	disk = diskRecords[0]
 	return disk, err
 }
 
 func (s *Storage) CleanDiskChunkServerId(serviceId string) error {
-	disks, err := s.GetDisk(comm.DISK_QUERY_SERVICE, serviceId)
+	diskRecords, err := s.GetDisk(comm.DISK_QUERY_SERVICE, serviceId)
 	if err != nil {
 		return err
 	}
 
-	for _, disk := range disks {
+	for _, disk := range diskRecords {
 		if err := s.UpdateDiskChunkServerID(
 			disk.Host,
 			disk.MountPoint,
@@ -382,6 +382,8 @@ func (s *Storage) GetDisk(filter string, args ...interface{}) ([]Disk, error) {
 		query = SELECT_DISK_ALL
 	case comm.DISK_QUERY_HOST:
 		query = SELECT_DISK_BY_HOST
+	case comm.DISK_QUERY_DISK_DEVICE:
+		query = SELECT_DISK_BY_DEVICE_PATH
 	case comm.DISK_QUERY_SERVICE:
 		query = SELECT_DISK_BY_CHUNKSERVER_ID
 	default:
@@ -396,7 +398,7 @@ func (s *Storage) GetDisk(filter string, args ...interface{}) ([]Disk, error) {
 	}
 
 	defer rows.Close()
-	var disks []Disk
+	var diskRecords []Disk
 	var disk Disk
 
 	for rows.Next() {
@@ -410,9 +412,9 @@ func (s *Storage) GetDisk(filter string, args ...interface{}) ([]Disk, error) {
 			&disk.ContainerImage,
 			&disk.ChunkServerID,
 			&disk.LastmodifiedTime)
-		disks = append(disks, disk)
+		diskRecords = append(diskRecords, disk)
 	}
-	return disks, err
+	return diskRecords, err
 }
 
 // cluster

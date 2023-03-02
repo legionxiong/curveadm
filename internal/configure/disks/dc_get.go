@@ -55,17 +55,24 @@ func (dc *DiskConfig) getInt(i *comm.Item) int {
 	return v.(int)
 }
 
-func (dc *DiskConfig) getSlice(i *comm.Item) []interface{} {
+func (dc *DiskConfig) getSlice(i *comm.Item) []string {
+	var config []string
+	var genericConfig []interface{}
 	v := dc.get(i)
 	if v == nil {
-		return make([]interface{}, 0)
+		return make([]string, 0)
 	}
-	return v.([]interface{})
+	genericConfig = v.([]interface{})
+	for _, c := range genericConfig {
+		config = append(config, c.(string))
+	}
+	return config
 }
 
-func (dc *DiskConfig) GetDevice() string              { return dc.getString(CONFIG_DEVICE) }
-func (dc *DiskConfig) GetMountPoint() string          { return dc.getString(CONFIG_MOUNT_POINT) }
-func (dc *DiskConfig) GetContainerImage() string      { return dc.getString(CONFIG_CONTAINER_IMAGE) }
-func (dc *DiskConfig) GetFormatPercent() int          { return dc.getInt(CONFIG_FORMAT_PERCENT) }
-func (dc *DiskConfig) GetHostsExclude() []interface{} { return dc.getSlice(CONFIG_HOSTS_EXCLUDE) }
-func (dc *DiskConfig) GetHostsOnly() []interface{}    { return dc.getSlice(CONFIG_HOSTS_ONLY) }
+func (dc *DiskConfig) GetDevice() string         { return dc.getString(CONFIG_DISK_DEVICE) }
+func (dc *DiskConfig) GetMountPoint() string     { return dc.getString(DISK_QUERY_DISK_DEVICE) }
+func (dc *DiskConfig) GetContainerImage() string { return dc.getString(CONFIG_GLOBAL_CONTAINER_IMAGE) }
+func (dc *DiskConfig) GetFormatPercent() int     { return dc.getInt(CONFIG_GLOBAL_FORMAT_PERCENT) }
+func (dc *DiskConfig) GetHost() []string         { return dc.getSlice(CONFIG_GLOBAL_HOST) }
+func (dc *DiskConfig) GetHostOnly() []string     { return dc.getSlice(CONFIG_DISK_HOST_ONLY) }
+func (dc *DiskConfig) GetHostExclude() []string  { return dc.getSlice(CONFIG_DISK_HOST_EXCLUDE) }

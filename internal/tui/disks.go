@@ -23,9 +23,21 @@
 package tui
 
 import (
+	"sort"
+
 	"github.com/opencurve/curveadm/internal/storage"
 	tuicommon "github.com/opencurve/curveadm/internal/tui/common"
 )
+
+func SortDiskRecords(diskRecords []storage.Disk) {
+	sort.Slice(diskRecords, func(i, j int) bool {
+		d1, d2 := diskRecords[i], diskRecords[j]
+		if d1.Host == d2.Host {
+			return d1.Device < d2.Device
+		}
+		return d1.Host < d2.Host
+	})
+}
 
 func FormatDisks(diskRecords []storage.Disk) string {
 	lines := [][]interface{}{}
@@ -41,6 +53,7 @@ func FormatDisks(diskRecords []storage.Disk) string {
 	lines = append(lines, first)
 	lines = append(lines, second)
 
+	SortDiskRecords(diskRecords)
 	for _, dr := range diskRecords {
 		lines = append(lines, []interface{}{
 			dr.Host,

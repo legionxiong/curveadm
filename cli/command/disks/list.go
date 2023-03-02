@@ -58,8 +58,8 @@ func NewListCommand(curveadm *cli.CurveAdm) *cobra.Command {
 func runList(curveadm *cli.CurveAdm, options listOptions) error {
 	var err error
 	var diskRecords []storage.Disk
-	diskData := curveadm.Disks()
-	err = updateDisk(diskData, curveadm)
+	// diskData := curveadm.Disks()
+	// err = syncDiskRecords(diskData, curveadm, options)
 	if err != nil {
 		return err
 	}
