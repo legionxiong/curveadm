@@ -543,7 +543,7 @@ var (
 	ERR_START_CRONTAB_IN_CONTAINER_FAILED = EC(690000, "start crontab in container failed")
 
 	// 800: deploy
-	ERR_DISK_DEVICE_NOT_FORMATTED = EC(800000, "disk device not formatted")
+	ERR_DISK_DEVICE_NOT_FORMATTED = EC(800000, "disk device is unformatted")
 
 	// 900: others
 	ERR_CANCEL_OPERATION = EC(CODE_CANCEL_OPERATION, "cancel operation")

@@ -287,14 +287,19 @@ func NewFormatChunkfilePoolTask(curveadm *cli.CurveAdm, fc *configure.FormatConf
 		Directory:   mountPoint,
 		ExecOptions: curveadm.ExecOptions(),
 	})
-	t.AddStep(&step2EditFSTab{
-		host:       host,
-		device:     device,
-		oldUUID:    &oldUUID,
-		mountPoint: mountPoint,
-		curveadm:   curveadm,
-	})
-	if fc.UseDiskUri {
+
+	if !fc.ServiceMountDevice {
+		t.AddStep(&step2EditFSTab{
+			host:       host,
+			device:     device,
+			oldUUID:    &oldUUID,
+			mountPoint: mountPoint,
+			curveadm:   curveadm,
+		})
+	}
+
+	// update disk size and uri(diskId) when use disk records commited by disks yaml
+	if fc.FromDiskRecord {
 		t.AddStep(&step2UpdateDiskSizeUri{
 			host:     host,
 			device:   device,

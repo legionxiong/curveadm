@@ -110,17 +110,27 @@ func GenDiskURI(proto, uri string) string {
 	return strings.Join([]string{proto, uri}, DISK_URI_SEP)
 }
 
-func GetDiskId(disk storage.Disk) (string, error) {
-	uriSlice := strings.Split(disk.URI, DISK_URI_SEP)
-	if len(uriSlice) == 0 {
-		return "", errno.ERR_INVALID_DISK_URI.
-			F("The disk[%s:%s] URI[%s] is invalid", disk.Host, disk.Device, disk.URI)
+func returnInvalidDiskUriError(disk storage.Disk) error {
+	return errno.ERR_INVALID_DISK_URI.
+		F("The URI[%s] of disk[%s:%s] is invalid", disk.Host, disk.Device, disk.URI)
+}
+
+func GetDiskId(disk storage.Disk) (diskId, diskUriProto string, err error) {
+	// valide disk uri:
+	// 1. fs:uuid//8035a617-72ec-4c06-8719-8aca79234ef9
+	// 2. (not implemented) maybe "nvme:pci//00:00.1"
+	diskUriComponants := strings.Split(disk.URI, DISK_URI_SEP)
+	if len(diskUriComponants) < 2 {
+		return "", diskUriProto, returnInvalidDiskUriError(disk)
 	}
 
-	if uriSlice[0] == DISK_URI_PROTO_FS_UUID {
-		return uriSlice[1], nil
+	diskUriProto = diskUriComponants[0]
+	switch diskUriProto {
+	case DISK_URI_PROTO_FS_UUID:
+		return diskUriComponants[1], diskUriProto, nil
+	default:
+		return "", diskUriProto, returnInvalidDiskUriError(disk)
 	}
-	return "", nil
 }
 
 func (dc *DiskConfig) Build() error {

@@ -92,14 +92,16 @@ func NewStopFormatTask(curveadm *cli.CurveAdm, fc *configure.FormatConfig) (*tas
 		Out:         &oldUUID,
 		ExecOptions: curveadm.ExecOptions(),
 	})
-	t.AddStep(&step2EditFSTab{
-		host:       host,
-		device:     device,
-		oldUUID:    &oldUUID,
-		mountPoint: mountPoint,
-		curveadm:   curveadm,
-		skipAdd:    true,
-	})
+	if !fc.ServiceMountDevice {
+		t.AddStep(&step2EditFSTab{
+			host:       host,
+			device:     device,
+			oldUUID:    &oldUUID,
+			mountPoint: mountPoint,
+			curveadm:   curveadm,
+			skipAdd:    true,
+		})
+	}
 
 	// 2: list container id and add step to task
 	t.AddStep(&step.ListContainers{
