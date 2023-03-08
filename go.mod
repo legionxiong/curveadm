@@ -23,6 +23,7 @@ require (
 	github.com/vbauerster/mpb/v7 v7.5.3
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.3.0
+	github.com/superfly/litefs-go v0.0.0-20230227231337-34ea5dcf1e0b
 )
 
 require (
