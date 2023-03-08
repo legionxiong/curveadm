@@ -31,6 +31,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	comm "github.com/opencurve/curveadm/internal/common"
 	"github.com/opencurve/curveadm/internal/errno"
+	"github.com/superfly/litefs-go"
 )
 
 type Version struct {
@@ -108,8 +109,9 @@ type AuditLog struct {
 }
 
 type Storage struct {
-	db    *sql.DB
-	mutex *sync.Mutex
+	db     *sql.DB
+	dbFile string
+	mutex  *sync.Mutex
 }
 
 func NewStorage(dbfile string) (*Storage, error) {
@@ -118,7 +120,7 @@ func NewStorage(dbfile string) (*Storage, error) {
 		return nil, err
 	}
 
-	s := &Storage{db: db, mutex: &sync.Mutex{}}
+	s := &Storage{db: db, dbFile: dbfile, mutex: &sync.Mutex{}}
 	if err = s.init(); err != nil {
 		return nil, err
 	}
@@ -196,17 +198,49 @@ func (s *Storage) compatible() error {
 	return tx.Commit()
 }
 
+func (s *Storage) execSQLDistribute(query string, args ...interface{}) error {
+	if err := litefs.WithHalt(s.dbFile, func() error {
+		stmt, err := s.db.Prepare(query)
+		if err != nil {
+			return err
+		}
+		_, err = stmt.Exec(args...)
+		return err
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
+// func (s *Storage) execSQLocal(query string, args ...interface{}) error {
+// 	stmt, err := s.db.Prepare(query)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	_, err = stmt.Exec(args...)
+// 	return err
+// }
+
 func (s *Storage) execSQL(query string, args ...interface{}) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	stmt, err := s.db.Prepare(query)
-	if err != nil {
-		return err
-	}
 
-	_, err = stmt.Exec(args...)
-	return err
+	return s.execSQLDistribute(query, args...)
+
 }
+
+// func (s *Storage) execSQL(query string, args ...interface{}) error {
+// 	s.mutex.Lock()
+// 	defer s.mutex.Unlock()
+// 	stmt, err := s.db.Prepare(query)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	_, err = stmt.Exec(args...)
+// 	return err
+// }
 
 func (s *Storage) Close() error {
 	return s.db.Close()
@@ -632,7 +666,7 @@ func (s *Storage) GetPlaygroundById(id string) ([]Playground, error) {
 }
 
 // audit
-func (s *Storage) InsertAuditLog(time time.Time, workDir, command string, status int) (int64, error) {
+func (s *Storage) InsertAuditLogLocal(time time.Time, workDir, command string, status int) (int64, error) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	stmt, err := s.db.Prepare(INSERT_AUDIT_LOG)
@@ -646,6 +680,44 @@ func (s *Storage) InsertAuditLog(time time.Time, workDir, command string, status
 	}
 
 	return result.LastInsertId()
+}
+
+func (s *Storage) InsertAuditDistribute(time time.Time, workDir, command string, status int) (int64, error) {
+	var result sql.Result
+	var err error
+	var stmt *sql.Stmt
+	if err := litefs.WithHalt(s.dbFile, func() error {
+		stmt, err = s.db.Prepare(INSERT_AUDIT_LOG)
+		if err != nil {
+			return err
+		}
+
+		result, err = stmt.Exec(time, workDir, command, status)
+		if err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		return -1, err
+	}
+	return result.LastInsertId()
+}
+
+func (s *Storage) InsertAuditLog(time time.Time, workDir, command string, status int) (int64, error) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	return s.InsertAuditDistribute(time, workDir, command, status)
+	// stmt, err := s.db.Prepare(INSERT_AUDIT_LOG)
+	// if err != nil {
+	// 	return -1, err
+	// }
+
+	// result, err := stmt.Exec(time, workDir, command, status)
+	// if err != nil {
+	// 	return -1, err
+	// }
+
+	// return result.LastInsertId()
 }
 
 func (s *Storage) SetAuditLogStatus(id int64, status, errorCode int) error {
