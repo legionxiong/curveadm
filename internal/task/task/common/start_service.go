@@ -93,9 +93,10 @@ func NewStartServiceTask(curveadm *cli.CurveAdm, dc *topology.DeployConfig) (*ta
 	t := task.NewTask("Start Service", subname, hc.GetSSHConfig())
 
 	// add step to task
-	var out, device string
+	var out string
 	var success bool
 
+	device := ""
 	if len(curveadm.DiskRecords()) > 0 {
 		disks, err := curveadm.Storage().GetDisk(common.DISK_FILTER_SERVICE, serviceId)
 		if err != nil {
@@ -123,8 +124,8 @@ func NewStartServiceTask(curveadm *cli.CurveAdm, dc *topology.DeployConfig) (*ta
 	if device != "" {
 		t.AddStep(&step.UmountFilesystem{
 			Directorys:     []string{device},
-			IgnoreUmounted: true,
-			IgnoreNotFound: true,
+			IgnoreUmounted: false, // service should not be started if failed to unmount disk(for data security)
+			IgnoreNotFound: false, // service should not be started if disk was not found
 			ExecOptions:    curveadm.ExecOptions(),
 		})
 	}

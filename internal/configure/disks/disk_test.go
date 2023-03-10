@@ -138,8 +138,8 @@ func TestDiskConfigInvalidFormatPercent(t *testing.T) {
 
 }
 
-// tservice_mount_device is a boolean,
-// It accepts 1, t, T, TRUE, true, True, 0, f, F, FALSE, false, False
+// the disk config service_mount_device is a boolean,
+// it accepts 1, t, T, TRUE, true, True, 0, f, F, FALSE, false, False
 func TestDiskConfigInvalidServiceMount(t *testing.T) {
 	assert := assert.New(t)
 	_, err := ParseDisks(disksDataInvalidServiceMount)
