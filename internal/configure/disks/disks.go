@@ -258,91 +258,83 @@ func ParseDisks(data string) ([]*DiskConfig, error) {
 	return dcs, nil
 }
 
-func UpdateDisks(disksData, host, device string, disk storage.Disk, curveadm *cli.CurveAdm) error {
+func UpdateDisks(disksData, host, newDiskDevice string,
+	oldDisk storage.Disk, curveadm *cli.CurveAdm) error {
 	disks, err := parseDisksData(disksData)
 	if err != nil {
 		return err
 	}
-	// diskRecords, err := curveadm.Storage().GetDisk("device", host, device)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// if len(diskRecords) == 0 {
 
 	var deviceExist bool
 	var diskIndex int
-	var diskMap map[string]interface{}
+	var diskMap map[string]any
 	for i, d := range disks.Disk {
-		if d["device"] == device {
+		if d[common.DISK_FILTER_DEVICE] == newDiskDevice {
 			deviceExist = true
 			diskIndex = i
 			diskMap = d
 		}
-
-		if d[common.DISK_FILTER_DEVICE] == disk.Device {
+		if d[common.DISK_FILTER_DEVICE] == oldDisk.Device {
 			if d[common.DISK_EXCLUDE_HOST] != nil {
-				// append old disk into excluding
+				// append host exclude
 				disks.Disk[i][common.DISK_EXCLUDE_HOST] = append(
-					d[common.DISK_EXCLUDE_HOST].([]interface{}), host)
+					d[common.DISK_EXCLUDE_HOST].([]any), host)
 			} else {
-				// add old disk excluding
+				// add host exclude
 				disks.Disk[i][common.DISK_EXCLUDE_HOST] = []string{host}
-
 			}
 			// remove old disk record
-			if err := curveadm.Storage().DeleteDisk(disk.Host, disk.Device); err != nil {
+			if err := curveadm.Storage().DeleteDisk(oldDisk.Host, oldDisk.Device); err != nil {
 				return err
 			}
 		}
 	}
 
-	if deviceExist {
-		// append new disk into hosts_only
-		disks.Disk[diskIndex][common.DISK_FILTER_HOST] = append(
-			diskMap[common.DISK_FILTER_HOST].([]interface{}), host)
-	} else {
-		// add new disk hosts_only
-		diskStruct := map[string]interface{}{
-			"device":                device,
-			"mount":                 disk.MountPoint,
-			common.DISK_FILTER_HOST: []string{host},
-		}
-		disks.Disk = append(disks.Disk, diskStruct)
-	}
-
-	// add new disk record
-	if err := curveadm.Storage().SetDisk(
-		disk.Host,
-		device,
-		disk.MountPoint,
-		disk.ContainerImage,
-		disk.FormatPercent,
-		disk.ServiceMountDevice); err != nil {
+	newDiskRecords, err := curveadm.Storage().GetDisk(common.DISK_FILTER_DEVICE, host, newDiskDevice)
+	if err != nil {
 		return err
 	}
+	if len(newDiskRecords) == 0 {
+		if deviceExist {
+			if diskMap[common.DISK_EXCLUDE_HOST] != nil {
+				newExcludehost := []string{}
+				for _, h := range diskMap[common.DISK_EXCLUDE_HOST].([]any) {
+					// remove host exclude
+					if h == host {
+						continue
+					}
+					newExcludehost = append(newExcludehost, h.(string))
+				}
+				disks.Disk[diskIndex][common.DISK_EXCLUDE_HOST] = newExcludehost
+			} else {
+				// append disk host
+				disks.Disk[diskIndex][common.DISK_FILTER_HOST] = append(
+					diskMap[common.DISK_FILTER_HOST].([]interface{}), host)
+			}
+		} else {
+			// add new disk config
+			diskStruct := map[string]interface{}{
+				common.DISK_FILTER_DEVICE: newDiskDevice,
+				common.DISK_FILTER_MOUNT:  oldDisk.MountPoint,
+				common.DISK_FILTER_HOST:   []string{host},
+			}
+			disks.Disk = append(disks.Disk, diskStruct)
+		}
+		// add new disk record
+		if err := curveadm.Storage().SetDisk(
+			oldDisk.Host,
+			newDiskDevice,
+			oldDisk.MountPoint,
+			oldDisk.ContainerImage,
+			oldDisk.FormatPercent,
+			oldDisk.ServiceMountDevice); err != nil {
+			return err
+		}
+	}
 
-	// } else {
-	// 	disk := diskRecords[0]
-	// 	// check if disk used by other chunkserver
-	// 	if disk.ChunkServerID != chunkserverId {
-	// 		return errno.ERR_REPLACE_DISK_USED_BY_OTHER_CHUNKSERVER.
-	// 			F("The disk[%s:%s] is being used by chunkserver %s",
-	// 				disk.Host, disk.Device, disk.ChunkServerID)
-	// 	}
+	disksDataStruct := Disk{disks.Global, disks.Disk}
 
-	// 	// check if the same phsycial disk
-	// 	if diskId, err := GetDiskId(disk); err != nil {
-	// 		return err
-	// 	} else if diskId == oldDiskId {
-	// 		return errno.ERR_REPLACE_THE_SAME_PHYSICAL_DISK.
-	// 			F("The new disk[UUID:%s] and the origin disk[UUID:%s] are the same", diskId, oldDiskId)
-	// 	}
-	// }
-	// fmt.Println(disks.Disk)
-	diskm := Disk{disks.Global, disks.Disk}
-
-	data, err := yaml.Marshal(diskm)
+	data, err := yaml.Marshal(disksDataStruct)
 	if err != nil {
 		return err
 	}
