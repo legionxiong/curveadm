@@ -234,18 +234,21 @@ func NewCreateContainerTask(curveadm *cli.CurveAdm, dc *topology.DeployConfig) (
 	options.ExecWithSudo = false
 	host := dc.GetHost()
 	dataDir := dc.GetDataDir()
-	diskRecords := curveadm.DiskRecords()
 
+	device := ""
 	extraParam := ""
 	serviceMountDevice := false
-	useDiskRecords := role == topology.ROLE_CHUNKSERVER && len(diskRecords) > 0
-	if useDiskRecords {
-		if err := curveadm.Storage().UpdateDiskChunkServerID(
-			host, dataDir, serviceId); err != nil {
+	// update disk service(chunkserver) ID and get disk UUID for service device direct mounting
+	if role == topology.ROLE_CHUNKSERVER && len(curveadm.DiskRecords()) > 0 {
+		if err := curveadm.Storage().UpdateDiskChunkServerID(host, dataDir, serviceId); err != nil {
 			return t, err
 		}
-		disk, _ := curveadm.Storage().GetDiskByMountPoint(host, dataDir)
+		disk, err := curveadm.Storage().GetDiskByMountPoint(host, dataDir)
+		if err != nil {
+			return t, err
+		}
 
+		device = disk.Device
 		serviceMountDevice = disk.ServiceMountDevice != 0
 		if serviceMountDevice {
 			diskId, diskUriProto, err := disks.GetDiskId(disk)
@@ -292,6 +295,14 @@ func NewCreateContainerTask(curveadm *cli.CurveAdm, dc *topology.DeployConfig) (
 		oldContainerId: &oldContainerId,
 		storage:        curveadm.Storage(),
 	})
+	if serviceMountDevice && device != "" {
+		t.AddStep(&step.UmountFilesystem{
+			Directorys:     []string{device},
+			IgnoreUmounted: false, // should not start service if failed to unmount disk from host
+			IgnoreNotFound: false, // should not start service if disk was not found
+			ExecOptions:    curveadm.ExecOptions(),
+		})
+	}
 
 	return t, nil
 }

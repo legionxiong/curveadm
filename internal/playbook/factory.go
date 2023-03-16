@@ -52,6 +52,7 @@ const (
 	CHECK_CHUNKFILE_POOL
 	CHECK_S3
 	CLEAN_PRECHECK_ENVIRONMENT
+	CHECK_DISK_REPLACEMENT
 
 	// common
 	PULL_IMAGE
@@ -117,6 +118,10 @@ const (
 
 	// STOP_FORMAT type stop formatting
 	STOP_FORMAT
+
+	// disk replacement
+	REPLACE_DISK
+	STOP_DISK_REPLACEMENT
 
 	// unknown
 	UNKNOWN
@@ -186,6 +191,8 @@ func (p *Playbook) createTasks(step *PlaybookStep) (*tasks.Tasks, error) {
 			t, err = checker.NewCheckMdsAddressTask(curveadm, config.GetCC(i))
 		case CLEAN_PRECHECK_ENVIRONMENT:
 			t, err = checker.NewCleanEnvironmentTask(curveadm, config.GetDC(i))
+		case CHECK_DISK_REPLACEMENT:
+			t, err = checker.NewCheckDiskReplacementTask(curveadm, config.GetDC(i))
 		// common
 		case PULL_IMAGE:
 			t, err = comm.NewPullImageTask(curveadm, config.GetDC(i))
@@ -286,7 +293,11 @@ func (p *Playbook) createTasks(step *PlaybookStep) (*tasks.Tasks, error) {
 			t, err = pg.NewRemovePlaygroundTask(curveadm, config.GetAny(i))
 		case GET_PLAYGROUND_STATUS:
 			t, err = pg.NewGetPlaygroundStatusTask(curveadm, config.GetAny(i))
-
+		// disk replacement
+		case REPLACE_DISK:
+			t, err = bs.NewReplaceDiskTask(curveadm, config.GetDC(i))
+		case STOP_DISK_REPLACEMENT:
+			t, err = bs.NewStopDiskReplacementTask(curveadm, config.GetDC(i))
 		default:
 			return nil, errno.ERR_UNKNOWN_TASK_TYPE.
 				F("task type: %d", step.Type)

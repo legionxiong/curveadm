@@ -26,12 +26,14 @@ import (
 	"bytes"
 	"strings"
 
+	"github.com/opencurve/curveadm/cli/cli"
 	"github.com/opencurve/curveadm/internal/build"
 	"github.com/opencurve/curveadm/internal/common"
 	"github.com/opencurve/curveadm/internal/errno"
 	"github.com/opencurve/curveadm/internal/storage"
 	"github.com/opencurve/curveadm/internal/utils"
 	"github.com/spf13/viper"
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -40,7 +42,7 @@ const (
 )
 
 type (
-	Disks struct {
+	Disk struct {
 		Global map[string]interface{}   `mapstructure:"global"`
 		Disk   []map[string]interface{} `mapstructure:"disk"`
 	}
@@ -103,7 +105,7 @@ func checkDupHost(dc *DiskConfig) error {
 	return nil
 }
 
-func checkDiskRootConfig(disks *Disks) error {
+func checkDiskRootConfig(disks *Disk) error {
 	if disks.Global == nil {
 		return errno.ERR_GLOBAL_FIELD_MISSING.
 			F("disks yaml has not 'global' field")
@@ -191,6 +193,22 @@ func NewDiskConfig(sequence int, config map[string]interface{}) *DiskConfig {
 	}
 }
 
+func parseDisksData(data string) (*Disk, error) {
+	parser := viper.NewWithOptions(viper.KeyDelimiter("::"))
+	parser.SetConfigType("yaml")
+	err := parser.ReadConfig(bytes.NewBuffer([]byte(data)))
+	if err != nil {
+		return nil, errno.ERR_PARSE_DISKS_FAILED.E(err)
+	}
+
+	disks := &Disk{}
+	if err := parser.Unmarshal(disks); err != nil {
+		return nil, errno.ERR_PARSE_DISKS_FAILED.E(err)
+	}
+
+	return disks, nil
+}
+
 func ParseDisks(data string) ([]*DiskConfig, error) {
 	parser := viper.NewWithOptions(viper.KeyDelimiter("::"))
 	parser.SetConfigType("yaml")
@@ -199,7 +217,11 @@ func ParseDisks(data string) ([]*DiskConfig, error) {
 		return nil, errno.ERR_PARSE_DISKS_FAILED.E(err)
 	}
 
-	disks := &Disks{}
+	disks, err := parseDisksData(data)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := parser.Unmarshal(disks); err != nil {
 		return nil, errno.ERR_PARSE_DISKS_FAILED.E(err)
 	}
@@ -234,4 +256,101 @@ func ParseDisks(data string) ([]*DiskConfig, error) {
 
 	build.DEBUG(build.DEBUG_DISKS, disks)
 	return dcs, nil
+}
+
+func UpdateDisks(disksData, host, device string, disk storage.Disk, curveadm *cli.CurveAdm) error {
+	disks, err := parseDisksData(disksData)
+	if err != nil {
+		return err
+	}
+	// diskRecords, err := curveadm.Storage().GetDisk("device", host, device)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// if len(diskRecords) == 0 {
+
+	var deviceExist bool
+	var diskIndex int
+	var diskMap map[string]interface{}
+	for i, d := range disks.Disk {
+		if d["device"] == device {
+			deviceExist = true
+			diskIndex = i
+			diskMap = d
+		}
+
+		if d[common.DISK_FILTER_DEVICE] == disk.Device {
+			if d[common.DISK_EXCLUDE_HOST] != nil {
+				// append old disk into excluding
+				disks.Disk[i][common.DISK_EXCLUDE_HOST] = append(
+					d[common.DISK_EXCLUDE_HOST].([]interface{}), host)
+			} else {
+				// add old disk excluding
+				disks.Disk[i][common.DISK_EXCLUDE_HOST] = []string{host}
+
+			}
+			// remove old disk record
+			if err := curveadm.Storage().DeleteDisk(disk.Host, disk.Device); err != nil {
+				return err
+			}
+		}
+	}
+
+	if deviceExist {
+		// append new disk into hosts_only
+		disks.Disk[diskIndex][common.DISK_FILTER_HOST] = append(
+			diskMap[common.DISK_FILTER_HOST].([]interface{}), host)
+	} else {
+		// add new disk hosts_only
+		diskStruct := map[string]interface{}{
+			"device":                device,
+			"mount":                 disk.MountPoint,
+			common.DISK_FILTER_HOST: []string{host},
+		}
+		disks.Disk = append(disks.Disk, diskStruct)
+	}
+
+	// add new disk record
+	if err := curveadm.Storage().SetDisk(
+		disk.Host,
+		device,
+		disk.MountPoint,
+		disk.ContainerImage,
+		disk.FormatPercent,
+		disk.ServiceMountDevice); err != nil {
+		return err
+	}
+
+	// } else {
+	// 	disk := diskRecords[0]
+	// 	// check if disk used by other chunkserver
+	// 	if disk.ChunkServerID != chunkserverId {
+	// 		return errno.ERR_REPLACE_DISK_USED_BY_OTHER_CHUNKSERVER.
+	// 			F("The disk[%s:%s] is being used by chunkserver %s",
+	// 				disk.Host, disk.Device, disk.ChunkServerID)
+	// 	}
+
+	// 	// check if the same phsycial disk
+	// 	if diskId, err := GetDiskId(disk); err != nil {
+	// 		return err
+	// 	} else if diskId == oldDiskId {
+	// 		return errno.ERR_REPLACE_THE_SAME_PHYSICAL_DISK.
+	// 			F("The new disk[UUID:%s] and the origin disk[UUID:%s] are the same", diskId, oldDiskId)
+	// 	}
+	// }
+	// fmt.Println(disks.Disk)
+	diskm := Disk{disks.Global, disks.Disk}
+
+	data, err := yaml.Marshal(diskm)
+	if err != nil {
+		return err
+	}
+	// fmt.Println(string(data))
+	if err := curveadm.Storage().SetDisks(string(data)); err != nil {
+		return err
+	}
+
+	return nil
+
 }

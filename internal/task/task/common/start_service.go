@@ -96,14 +96,14 @@ func NewStartServiceTask(curveadm *cli.CurveAdm, dc *topology.DeployConfig) (*ta
 	var out string
 	var success bool
 
-	device := ""
+	deviceToUmount := ""
 	if len(curveadm.DiskRecords()) > 0 {
 		disks, err := curveadm.Storage().GetDisk(common.DISK_FILTER_SERVICE, serviceId)
 		if err != nil {
 			return nil, err
 		}
 		if len(disks) > 0 && disks[0].ServiceMountDevice != 0 {
-			device = disks[0].Device
+			deviceToUmount = disks[0].Device
 		}
 
 	}
@@ -120,12 +120,12 @@ func NewStartServiceTask(curveadm *cli.CurveAdm, dc *topology.DeployConfig) (*ta
 		Lambda: checkContainerExist(host, role, containerId, &out),
 	})
 
-	// umount disk device from host as it will be mounted in service(chunkserver) container
-	if device != "" {
+	// unmount disk device from host as it will be mounted in service(chunkserver) container
+	if deviceToUmount != "" {
 		t.AddStep(&step.UmountFilesystem{
-			Directorys:     []string{device},
-			IgnoreUmounted: false, // service should not be started if failed to unmount disk(for data security)
-			IgnoreNotFound: false, // service should not be started if disk was not found
+			Directorys:     []string{deviceToUmount},
+			IgnoreUmounted: true,
+			IgnoreNotFound: false, // should not start service if disk device was not found
 			ExecOptions:    curveadm.ExecOptions(),
 		})
 	}

@@ -140,6 +140,16 @@ func PromptMigrate() string {
 	return prompt.Build()
 }
 
+func PromptReplaceDisk(id, role, host, disk string) string {
+	prompt := NewPrompt(color.YellowString(PROMPT_COMMON_WARNING) + DEFAULT_CONFIRM_PROMPT)
+	prompt.data["warning"] = "WARNING: replace disk will stop service which may cause client IO hang"
+	prompt.data["id"] = id
+	prompt.data["rule"] = role
+	prompt.data["host"] = host
+	prompt.data["disk"] = disk
+	return prompt.Build()
+}
+
 func PromptStartService(id, role, host string) string {
 	prompt := NewPrompt(color.YellowString(PROMPT_COMMON_WARNING) + DEFAULT_CONFIRM_PROMPT)
 	prompt.data["warning"] = "WARNING: service items which matched will start"
@@ -210,7 +220,7 @@ func PromptErrorCode(code int, description, clue, logpath string) string {
 	if len(clue) > 0 {
 		prompt.data["clue"] = prettyClue(clue)
 	}
-	prompt.data["website"] = fmt.Sprintf("https://github.com/opencurve/curveadm/wiki/errno%d#%06d", code / 100000, code)
+	prompt.data["website"] = fmt.Sprintf("https://github.com/opencurve/curveadm/wiki/errno%d#%06d", code/100000, code)
 	if len(logpath) > 0 {
 		prompt.data["logpath"] = logpath
 	}

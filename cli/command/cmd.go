@@ -67,23 +67,24 @@ func addSubCommands(cmd *cobra.Command, curveadm *cli.CurveAdm) {
 		target.NewTargetCommand(curveadm),         // curveadm target ...
 		pfs.NewPFSCommand(curveadm),               // curveadm pfs ...
 
-		NewAuditCommand(curveadm),      // curveadm audit
-		NewCleanCommand(curveadm),      // curveadm clean
-		NewCompletionCommand(curveadm), // curveadm completion
-		NewDeployCommand(curveadm),     // curveadm deploy
-		NewEnterCommand(curveadm),      // curveadm enter
-		NewExecCommand(curveadm),       // curveadm exec
-		NewFormatCommand(curveadm),     // curveadm format
-		NewMigrateCommand(curveadm),    // curveadm migrate
-		NewPrecheckCommand(curveadm),   // curveadm precheck
-		NewReloadCommand(curveadm),     // curveadm reload
-		NewRestartCommand(curveadm),    // curveadm restart
-		NewScaleOutCommand(curveadm),   // curveadm scale-out
-		NewStartCommand(curveadm),      // curveadm start
-		NewStatusCommand(curveadm),     // curveadm status
-		NewStopCommand(curveadm),       // curveadm stop
-		NewSupportCommand(curveadm),    // curveadm support
-		NewUpgradeCommand(curveadm),    // curveadm upgrade
+		NewAuditCommand(curveadm),       // curveadm audit
+		NewCleanCommand(curveadm),       // curveadm clean
+		NewCompletionCommand(curveadm),  // curveadm completion
+		NewDeployCommand(curveadm),      // curveadm deploy
+		NewEnterCommand(curveadm),       // curveadm enter
+		NewExecCommand(curveadm),        // curveadm exec
+		NewFormatCommand(curveadm),      // curveadm format
+		NewMigrateCommand(curveadm),     // curveadm migrate
+		NewPrecheckCommand(curveadm),    // curveadm precheck
+		NewReloadCommand(curveadm),      // curveadm reload
+		NewRestartCommand(curveadm),     // curveadm restart
+		NewScaleOutCommand(curveadm),    // curveadm scale-out
+		NewStartCommand(curveadm),       // curveadm start
+		NewStatusCommand(curveadm),      // curveadm status
+		NewStopCommand(curveadm),        // curveadm stop
+		NewSupportCommand(curveadm),     // curveadm support
+		NewUpgradeCommand(curveadm),     // curveadm upgrade
+		NewReplaceDiskCommand(curveadm), // curveadm replace-disk
 		// commonly used shorthands
 		hosts.NewSSHCommand(curveadm),      // curveadm ssh
 		hosts.NewPlaybookCommand(curveadm), // curveadm playbook

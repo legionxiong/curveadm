@@ -137,6 +137,14 @@ type (
 		module.ExecOptions
 	}
 
+	Tune2Filesystem struct {
+		Device  string
+		Param   string
+		Success *bool
+		Out     *string
+		module.ExecOptions
+	}
+
 	// network
 	SocketStatistics struct {
 		Filter    string
@@ -400,6 +408,14 @@ func (s *ListBlockDevice) Execute(ctx *context.Context) error {
 	if s.NoHeadings {
 		cmd.AddOption("--noheadings")
 	}
+
+	out, err := cmd.Execute(s.ExecOptions)
+	return PostHandle(s.Success, s.Out, out, err, errno.ERR_LIST_BLOCK_DEVICES_FAILED)
+}
+
+func (s *Tune2Filesystem) Execute(ctx *context.Context) error {
+	cmd := ctx.Module().Shell().Tune2FS(s.Device)
+	cmd.AddOption(s.Param)
 
 	out, err := cmd.Execute(s.ExecOptions)
 	return PostHandle(s.Success, s.Out, out, err, errno.ERR_LIST_BLOCK_DEVICES_FAILED)

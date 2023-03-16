@@ -182,7 +182,7 @@ func syncDiskRecords(data string, dcs []*disks.DiskConfig,
 	for _, dr := range diskRecordDeleteList {
 		if dr.ChunkServerID != comm.DISK_DEFAULT_NULL_CHUNKSERVER_ID {
 			return errno.ERR_DELETE_SERVICE_BINDING_DISK.
-				F("The disk[%s:%s] is used by service[%s:%s]",
+				F("The disk device[%s:%s] is used by service[%s:%s]",
 					dr.Host, dr.Device, topology.ROLE_CHUNKSERVER, dr.ChunkServerID)
 		}
 

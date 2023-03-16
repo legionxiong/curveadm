@@ -225,6 +225,8 @@ var (
 	// 116: database/SQL (execute SQL statement: disk table)
 	ERR_UPDATE_DISK_FAILED      = EC(116000, "execute SQL failed while updating disk")
 	ERR_GET_DISK_RECORDS_FAILED = EC(116001, "execute SQL failed while get disk records")
+	ERR_DISK_NOT_FOUND          = EC(116002, "disk record not found")
+	ERR_EMPTY_DISKS             = EC(116003, "disks are empty")
 	// 117: database/SQL (execute SQL statement: disks table)
 	ERR_GET_DISKS_FAILED    = EC(117000, "execute SQL failed while get disks")
 	ERR_UPDATE_DISKS_FAILED = EC(117001, "execute SQL failed while updating disks")
@@ -521,6 +523,7 @@ var (
 	ERR_INSTALL_OR_REMOVE_DEBIAN_PACKAGE_FAILED    = EC(620024, "install or remove debian package failed (dpkg)")
 	ERR_INSTALL_OR_REMOVE_RPM_PACKAGE_FAILED       = EC(620025, "install or remove rpm package failed (rpm)")
 	ERR_SECURE_COPY_FILE_TO_REMOTE_FAILED          = EC(620026, "secure copy file to remote failed (scp)")
+	ERR_TUNE2FS_UPDATE_DISK_UUID_FAILED            = EC(620027, "update disk uuid failed(tune2fs)")
 	ERR_RUN_SCRIPT_FAILED                          = EC(620998, "run script failed (bash script.sh)")
 	ERR_RUN_A_BASH_COMMAND_FAILED                  = EC(620999, "run a bash command failed (bash -c)")
 
@@ -545,6 +548,18 @@ var (
 
 	// 800: deploy
 	ERR_DISK_DEVICE_NOT_FORMATTED = EC(800000, "disk device is unformatted")
+
+	// 810: replace disk
+	ERR_CHUNKSERVER_ID_IS_REQUIRED             = EC(810000, "chunkserver id is required")
+	ERR_DISK_PATH_IS_REQUIRED                  = EC(810001, "disk device patch is required")
+	ERR_DISK_NOT_EMPTY                         = EC(810002, "nonempty disk")
+	ERR_REPLACE_THE_SAME_PHYSICAL_DISK         = EC(810003, "same pyhsical disk")
+	ERR_REPLACE_DISK_USED_BY_OTHER_CHUNKSERVER = EC(810004, "disk already used")
+	ERR_REPLACE_DISK_SMALLER_SIZE              = EC(810005, "smaller disk size")
+	ERR_REPLACE_DISK_TOO_MANY                  = EC(810006, "too many disk replacement")
+	ERR_REPLACE_DISK_CLUSTER_NOT_HEALTHY       = EC(810007, "cluster not healthy")
+	ERR_REPLACE_DISK_CLUSTER_HEALTH_UNKNOWN    = EC(810008, "cluster health unknown")
+	ERR_REPLACE_DISK_NO_SUCH_REPLACEMENT       = EC(810008, "no such disk replacement")
 
 	// 900: others
 	ERR_CANCEL_OPERATION = EC(CODE_CANCEL_OPERATION, "cancel operation")
