@@ -332,6 +332,7 @@ func UpdateDisks(disksData, host, newDiskDevice string,
 			newDiskDevice,
 			oldDisk.MountPoint,
 			oldDisk.ContainerImage,
+			oldDisk.ChunkServerID,
 			oldDisk.FormatPercent,
 			oldDisk.ServiceMountDevice); err != nil {
 			return err

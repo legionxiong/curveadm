@@ -23,6 +23,7 @@
 package disks
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/fatih/color"
@@ -104,21 +105,33 @@ func assambleNewDiskRecords(dcs []*disks.DiskConfig,
 	var newDiskRecords, diskRecordDeleteList []storage.Disk
 	for _, dc := range dcs {
 		for _, host := range dc.GetHost() {
-			key := strings.Join([]string{host, dc.GetDevice()}, HOST_DEVICE_SEP)
+			device := dc.GetDevice()
+			key := strings.Join([]string{host, device}, HOST_DEVICE_SEP)
 			newDiskMap[key] = true
 			if dc.GetServiceMount() {
 				serviceMountDevice = 1
 			}
+			diskSize := comm.DISK_DEFAULT_NULL_SIZE
+			diskUri := comm.DISK_DEFAULT_NULL_URI
+			diskChunkserverId := comm.DISK_DEFAULT_NULL_CHUNKSERVER_ID
+			for _, dr := range oldDiskRecords {
+				if dr.Host == host && device == dr.Device {
+					diskSize = dr.Size
+					diskUri = dr.URI
+					diskChunkserverId = dr.ChunkServerID
+					break
+				}
+			}
 			newDiskRecords = append(
 				newDiskRecords, storage.Disk{
 					Host:               host,
-					Device:             dc.GetDevice(),
-					Size:               comm.DISK_DEFAULT_NULL_SIZE,
-					URI:                comm.DISK_DEFAULT_NULL_URI,
+					Device:             device,
+					Size:               diskSize,
+					URI:                diskUri,
 					MountPoint:         dc.GetMountPoint(),
 					ContainerImage:     dc.GetContainerImage(),
 					FormatPercent:      dc.GetFormatPercent(),
-					ChunkServerID:      comm.DISK_DEFAULT_NULL_CHUNKSERVER_ID,
+					ChunkServerID:      diskChunkserverId,
 					ServiceMountDevice: serviceMountDevice,
 				})
 		}
@@ -140,6 +153,7 @@ func writeDiskRecord(dr storage.Disk, curveadm *cli.CurveAdm) error {
 		dr.Device,
 		dr.MountPoint,
 		dr.ContainerImage,
+		comm.DISK_DEFAULT_NULL_CHUNKSERVER_ID,
 		dr.FormatPercent,
 		dr.ServiceMountDevice); err != nil {
 		return err
@@ -157,7 +171,8 @@ func syncDiskRecords(data string, dcs []*disks.DiskConfig,
 	tui.SortDiskRecords(newDiskRecords)
 	oldDiskRecordsString := tui.FormatDisks(oldDiskRecords)
 	newDiskRecordsString := tui.FormatDisks(newDiskRecords)
-
+	fmt.Println(oldDiskRecordsString)
+	fmt.Println(newDiskRecordsString)
 	if len(newDiskRecords) != len(oldDiskRecords) {
 		if !options.slient {
 			diff := utils.Diff(oldDiskRecordsString, newDiskRecordsString)

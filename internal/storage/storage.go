@@ -315,7 +315,7 @@ func (s *Storage) GetDisks() ([]Disks, error) {
 }
 
 // disk
-func (s *Storage) SetDisk(host, device, mount, containerImage string,
+func (s *Storage) SetDisk(host, device, mount, containerImage, chunkServerId string,
 	formatPercent, serviceMountDevice int) error {
 	diskRecords, err := s.GetDisk(SELECT_DISK_BY_DEVICE_PATH, host, device)
 	if err != nil {
@@ -331,7 +331,7 @@ func (s *Storage) SetDisk(host, device, mount, containerImage string,
 			mount,
 			formatPercent,
 			containerImage,
-			comm.DISK_DEFAULT_NULL_CHUNKSERVER_ID,
+			chunkServerId,
 			serviceMountDevice,
 		)
 	}

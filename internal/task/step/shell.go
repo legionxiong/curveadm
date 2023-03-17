@@ -418,7 +418,7 @@ func (s *Tune2Filesystem) Execute(ctx *context.Context) error {
 	cmd.AddOption(s.Param)
 
 	out, err := cmd.Execute(s.ExecOptions)
-	return PostHandle(s.Success, s.Out, out, err, errno.ERR_LIST_BLOCK_DEVICES_FAILED)
+	return PostHandle(s.Success, s.Out, out, err, errno.ERR_TUNE2FS_UPDATE_DISK_UUID_FAILED)
 }
 
 // network

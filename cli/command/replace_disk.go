@@ -296,7 +296,7 @@ func runReplaceDisk(curveadm *cli.CurveAdm, options replaceDiskOptions) error {
 	}
 
 	var disk storage.Disk
-	var formerDiskId string
+	var oldDiskUuid string
 	if options.chunkserverId != "" {
 		diskRecords, err := curveadm.Storage().GetDisk(comm.DISK_FILTER_SERVICE, options.chunkserverId)
 		if err != nil {
@@ -310,10 +310,11 @@ func runReplaceDisk(curveadm *cli.CurveAdm, options replaceDiskOptions) error {
 
 		disk = diskRecords[0]
 		formerDiskId, _, err := disks.GetDiskId(disk)
-
 		if err != nil {
 			return err
 		}
+
+		oldDiskUuid = formerDiskId
 
 		// add disk replacement record
 		if len(diskReplacements) == 0 && options.device != "" {
@@ -334,7 +335,7 @@ func runReplaceDisk(curveadm *cli.CurveAdm, options replaceDiskOptions) error {
 	}
 
 	// 2) generate disk replacement playbook
-	pb, err := genReplaceDiskPlaybook(curveadm, dcs, options, formerDiskId)
+	pb, err := genReplaceDiskPlaybook(curveadm, dcs, options, oldDiskUuid)
 	if err != nil {
 		return err
 	}

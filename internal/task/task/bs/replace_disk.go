@@ -85,12 +85,12 @@ func (s *replaceDisk) Execute(ctx *context.Context) error {
 
 func NewReplaceDiskTask(curveadm *cli.CurveAdm, dc *topology.DeployConfig) (*task.Task, error) {
 	host := dc.GetHost()
-	newDiskDevPathSlice := curveadm.MemStorage().Get(comm.DISK_REPLACEMENT_NEW_DISK_DEVICE).([]string)
-	if len(newDiskDevPathSlice) == 0 {
-		return nil, errno.ERR_REPLACE_DISK_MISSING_NEW_DISK_DEVICE.
-			F("New device for oldDisk replacement was not found")
-	}
-	newDiskDevPath := newDiskDevPathSlice[0]
+	newDiskDevPath := curveadm.MemStorage().Get(comm.DISK_REPLACEMENT_NEW_DISK_DEVICE).(string)
+	// if len(newDiskDevPathSlice) == 0 {
+	// 	return nil, errno.ERR_REPLACE_DISK_MISSING_NEW_DISK_DEVICE.
+	// 		F("New device for oldDisk replacement was not found")
+	// }
+	// newDiskDevPath := newDiskDevPathSlice[0]
 	diskRecord, err := curveadm.Storage().GetDiskByMountPoint(host, dc.GetDataDir())
 	if err != nil {
 		return nil, err

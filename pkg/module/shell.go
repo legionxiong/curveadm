@@ -215,7 +215,7 @@ func (s *Shell) LsBlk(device ...string) *Shell {
 	return s
 }
 
-func (s *Shell) Tune2FS(device ...string) *Shell {
+func (s *Shell) Tune2FS(device string) *Shell {
 	s.tmpl = template.Must(template.New("tune2fs").Parse(TEMPLATE_TUNE2FS))
 	s.data["device"] = device
 	return s
