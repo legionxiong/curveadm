@@ -23,7 +23,6 @@
 package disks
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/fatih/color"
@@ -171,8 +170,7 @@ func syncDiskRecords(data string, dcs []*disks.DiskConfig,
 	tui.SortDiskRecords(newDiskRecords)
 	oldDiskRecordsString := tui.FormatDisks(oldDiskRecords)
 	newDiskRecordsString := tui.FormatDisks(newDiskRecords)
-	fmt.Println(oldDiskRecordsString)
-	fmt.Println(newDiskRecordsString)
+
 	if len(newDiskRecords) != len(oldDiskRecords) {
 		if !options.slient {
 			diff := utils.Diff(oldDiskRecordsString, newDiskRecordsString)

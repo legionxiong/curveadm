@@ -344,11 +344,11 @@ func (s *Storage) SetDisk(host, device, mount, containerImage, chunkServerId str
 		diskRecords[0].Id)
 }
 
-func (s *Storage) UpdateDiskURI(host, device, devUri string) error {
+func (s *Storage) UpdateDiskURI(devUri, host, device string) error {
 	return s.execSQL(SET_DISK_URI, devUri, host, device)
 }
 
-func (s *Storage) UpdateDiskSize(host, device, size string) error {
+func (s *Storage) UpdateDiskSize(size, host, device string) error {
 	return s.execSQL(SET_DISK_SIZE, size, host, device)
 }
 

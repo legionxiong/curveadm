@@ -122,7 +122,7 @@ func GenDiskURI(proto, uri string) string {
 }
 
 func returnInvalidDiskUriError(disk storage.Disk) error {
-	return errno.ERR_INVALID_DISK_URI.
+	return errno.ERR_DISK_INVALID_URI.
 		F("The URI[%s] of disk[%s:%s] is invalid", disk.Host, disk.Device, disk.URI)
 }
 
@@ -327,16 +327,16 @@ func UpdateDisks(disksData, host, newDiskDevice string,
 			disks.Disk = append(disks.Disk, diskStruct)
 		}
 		// add new disk record
-		if err := curveadm.Storage().SetDisk(
-			oldDisk.Host,
-			newDiskDevice,
-			oldDisk.MountPoint,
-			oldDisk.ContainerImage,
-			oldDisk.ChunkServerID,
-			oldDisk.FormatPercent,
-			oldDisk.ServiceMountDevice); err != nil {
-			return err
-		}
+		// if err := curveadm.Storage().SetDisk(
+		// 	oldDisk.Host,
+		// 	newDiskDevice,
+		// 	oldDisk.MountPoint,
+		// 	oldDisk.ContainerImage,
+		// 	oldDisk.ChunkServerID,
+		// 	oldDisk.FormatPercent,
+		// 	oldDisk.ServiceMountDevice); err != nil {
+		// 	return err
+		// }
 	}
 
 	disksDataStruct := Disk{disks.Global, disks.Disk}

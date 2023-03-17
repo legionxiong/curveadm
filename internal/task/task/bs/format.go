@@ -206,15 +206,17 @@ func (s *step2UpdateDiskSizeUri) Execute(ctx *context.Context) error {
 		}
 	}
 
-	if s.diskId != "" {
-		diskUri = disks.GenDiskURI(disks.DISK_URI_PROTO_FS_UUID, s.diskId)
+	if len(s.diskId) == 0 {
+		return errno.ERR_DISK_GET_EMPTY_UUID.
+			F("Get empty UUID for disk device[%s:%s]", s.host, s.device)
 	}
-
-	if err := curveadm.Storage().UpdateDiskSize(s.host, s.device, s.size); err != nil {
+	fmt.Println("disks size uuid", s.device, s.size, s.diskId)
+	if err := curveadm.Storage().UpdateDiskSize(s.size, s.host, s.device); err != nil {
 		return err
 	}
 
-	if err := curveadm.Storage().UpdateDiskURI(s.host, s.device, diskUri); err != nil {
+	diskUri = disks.GenDiskURI(disks.DISK_URI_PROTO_FS_UUID, s.diskId)
+	if err := curveadm.Storage().UpdateDiskURI(diskUri, s.host, s.device); err != nil {
 		return err
 	}
 	return nil

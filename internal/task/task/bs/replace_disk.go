@@ -72,7 +72,8 @@ func (s *replaceDisk) Execute(ctx *context.Context) error {
 	}
 
 	if s.newDiskDevPath != s.oldDisk.Device {
-		if err := updateDiskUuid("random", s.host, s.oldDisk.Device, s.curveadm, ctx); err != nil {
+		if err := updateDiskUuid("random", s.host, s.oldDisk.Device,
+			s.curveadm, ctx); err != nil {
 			return err
 		}
 	}

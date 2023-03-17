@@ -244,7 +244,14 @@ func NewCheckDiskReplacementTask(curveadm *cli.CurveAdm, dc *topology.DeployConf
 		host, newDiskDevice, chunkserverId)
 	t := task.NewTask("Check Disk Replacement", subname, hc.GetSSHConfig())
 
-	// 1. check disk size
+	// 1. check cluster health
+	t.AddStep(&checkCopysetsHealty{
+		host:          host,
+		chunkserverId: chunkserverId,
+		curveadm:      curveadm,
+	})
+
+	// 2. check disk size
 	t.AddStep((&checkDiskSize{
 		host:          host,
 		newDiskDevice: newDiskDevice,
@@ -252,7 +259,7 @@ func NewCheckDiskReplacementTask(curveadm *cli.CurveAdm, dc *topology.DeployConf
 		curveadm:      curveadm,
 	}))
 
-	// 2. check disk in use
+	// 3. check disk in use
 	t.AddStep(&checkDiskInUse{
 		host:          host,
 		newDiskDevice: newDiskDevice,
@@ -260,7 +267,7 @@ func NewCheckDiskReplacementTask(curveadm *cli.CurveAdm, dc *topology.DeployConf
 		curveadm:      curveadm,
 	})
 
-	// 3. check the same disk
+	// 4. check the same disk
 	t.AddStep(&checkDiskTheSame{
 		host:          host,
 		newDiskDevice: newDiskDevice,
@@ -268,17 +275,10 @@ func NewCheckDiskReplacementTask(curveadm *cli.CurveAdm, dc *topology.DeployConf
 		curveadm:      curveadm,
 	})
 
-	// 4. check disk empty
+	// 5. check disk empty
 	t.AddStep(&checkDiskEmpty{
 		host:          host,
 		newDiskDevice: newDiskDevice,
-		curveadm:      curveadm,
-	})
-
-	// 5. check cluster health
-	t.AddStep(&checkCopysetsHealty{
-		host:          host,
-		chunkserverId: chunkserverId,
 		curveadm:      curveadm,
 	})
 

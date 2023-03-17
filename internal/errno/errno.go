@@ -315,7 +315,6 @@ var (
 	ERR_DUPLICATE_DISK_MOUNT_POINT     = EC(323007, "disk mount point is duplicated")
 	ERR_DISK_FORMAT_PERCENT_EXCEED_100 = EC(323008, "disk format percent is greater than 100")
 	ERR_DELETE_SERVICE_BINDING_DISK    = EC(323009, "cannot remove service binding disk")
-	ERR_INVALID_DISK_URI               = EC(323010, "invalid disk uri")
 
 	// 330: configure (topology.yaml: parse failed)
 	ERR_TOPOLOGY_FILE_NOT_FOUND         = EC(330000, "topology file not found")
@@ -549,18 +548,20 @@ var (
 	// 800: deploy
 	ERR_DISK_DEVICE_NOT_FORMATTED = EC(800000, "disk device is unformatted")
 
-	// 810: replace disk
+	// 810: disk / disk replacement
 	ERR_CHUNKSERVER_ID_IS_REQUIRED             = EC(810000, "chunkserver id is required")
 	ERR_DISK_PATH_IS_REQUIRED                  = EC(810001, "disk device patch is required")
 	ERR_DISK_NOT_EMPTY                         = EC(810002, "nonempty disk")
-	ERR_REPLACE_THE_SAME_PHYSICAL_DISK         = EC(810003, "same pyhsical disk")
-	ERR_REPLACE_DISK_USED_BY_OTHER_CHUNKSERVER = EC(810004, "disk already used")
-	ERR_REPLACE_DISK_SMALLER_SIZE              = EC(810005, "smaller disk size")
-	ERR_REPLACE_DISK_TOO_MANY                  = EC(810006, "too many disk replacement")
-	ERR_REPLACE_DISK_CLUSTER_NOT_HEALTHY       = EC(810007, "cluster not healthy")
-	ERR_REPLACE_DISK_CLUSTER_HEALTH_UNKNOWN    = EC(810008, "cluster health unknown")
-	ERR_REPLACE_DISK_NO_SUCH_REPLACEMENT       = EC(810008, "no such disk replacement")
-	ERR_REPLACE_DISK_MISSING_NEW_DISK_DEVICE   = EC(810008, "mising new disk device")
+	ERR_DISK_INVALID_URI                       = EC(810003, "invalid disk uri")
+	ERR_DISK_GET_EMPTY_UUID                    = EC(810004, "invalid disk uri")
+	ERR_REPLACE_THE_SAME_PHYSICAL_DISK         = EC(810005, "same pyhsical disk")
+	ERR_REPLACE_DISK_USED_BY_OTHER_CHUNKSERVER = EC(810006, "disk already used")
+	ERR_REPLACE_DISK_SMALLER_SIZE              = EC(810007, "smaller disk size")
+	ERR_REPLACE_DISK_TOO_MANY                  = EC(810008, "too many disk replacement")
+	ERR_REPLACE_DISK_CLUSTER_NOT_HEALTHY       = EC(810009, "cluster not healthy")
+	ERR_REPLACE_DISK_CLUSTER_HEALTH_UNKNOWN    = EC(810010, "cluster health unknown")
+	ERR_REPLACE_DISK_NO_SUCH_REPLACEMENT       = EC(810011, "no such disk replacement")
+	ERR_REPLACE_DISK_MISSING_NEW_DISK_DEVICE   = EC(810012, "mising new disk device")
 
 	// 900: others
 	ERR_CANCEL_OPERATION = EC(CODE_CANCEL_OPERATION, "cancel operation")
