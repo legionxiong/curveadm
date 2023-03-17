@@ -30,26 +30,28 @@ import (
 	"github.com/opencurve/curveadm/internal/configure/disks"
 	"github.com/opencurve/curveadm/internal/configure/topology"
 	"github.com/opencurve/curveadm/internal/errno"
+	"github.com/opencurve/curveadm/internal/storage"
 	"github.com/opencurve/curveadm/internal/task/context"
 	"github.com/opencurve/curveadm/internal/task/step"
 	"github.com/opencurve/curveadm/internal/task/task"
 )
 
 type replaceDisk struct {
-	chunkserverId string
-	diskDevPath   string
-	host          string
-	diskData      string
-	curveadm      *cli.CurveAdm
+	chunkserverId  string
+	newDiskDevPath string
+	host           string
+	disksData      string
+	oldDisk        storage.Disk
+	curveadm       *cli.CurveAdm
 }
 
-func updateDiskUuid(uuid, diskDevPath, host string,
+func updateDiskUuid(diskUuid, host, newDiskDevPath string,
 	curveadm *cli.CurveAdm, ctx *context.Context) error {
 	var success bool
 	var tune2fsRet *string
 	step := &step.Tune2Filesystem{
-		Device:      diskDevPath,
-		Param:       fmt.Sprintf("-U %s", uuid),
+		Device:      newDiskDevPath,
+		Param:       fmt.Sprintf("-U %s", diskUuid),
 		Success:     &success,
 		Out:         tune2fsRet,
 		ExecOptions: curveadm.ExecOptions(),
@@ -59,7 +61,7 @@ func updateDiskUuid(uuid, diskDevPath, host string,
 	}
 	if !success {
 		return errno.ERR_TUNE2FS_UPDATE_DISK_UUID_FAILED.
-			F("Failed to update the uuid of disk[%s:%s]", host, diskDevPath)
+			F("Failed to update the UUID of oldDisk[%s:%s]", host, newDiskDevPath)
 	}
 	return nil
 }
@@ -69,36 +71,34 @@ func (s *replaceDisk) Execute(ctx *context.Context) error {
 		return nil
 	}
 
-	diskRecords, err := s.curveadm.Storage().GetDisk(comm.DISK_FILTER_SERVICE, s.chunkserverId)
-	if err != nil {
-		return err
+	if s.newDiskDevPath != s.oldDisk.Device {
+		if err := updateDiskUuid("random", s.host, s.oldDisk.Device, s.curveadm, ctx); err != nil {
+			return err
+		}
 	}
-	if len(diskRecords) == 0 {
-		return errno.ERR_DATABASE_EMPTY_QUERY_RESULT.
-			F("The chunkserver[ID: %s] currently has not disk device",
-				s.chunkserverId)
-	}
-	disk := diskRecords[0]
-	formerDiskId, _, err := disks.GetDiskId(disk)
-	if err != nil {
-		return err
-	}
-	if err := updateDiskUuid(formerDiskId, s.host, s.diskDevPath, s.curveadm, ctx); err != nil {
-		return err
-	}
-	if err := disks.UpdateDisks(s.diskData, s.host, s.diskDevPath,
-		disk, s.curveadm); err != nil {
+	if err := disks.UpdateDisks(s.disksData, s.host, s.newDiskDevPath,
+		s.oldDisk, s.curveadm); err != nil {
 		return err
 	}
 	return nil
 }
 
 func NewReplaceDiskTask(curveadm *cli.CurveAdm, dc *topology.DeployConfig) (*task.Task, error) {
-	chunkserverId := curveadm.MemStorage().Get(comm.DISK_CHUNKSERVER_ID).(string)
-	diskDevPath := curveadm.MemStorage().Get(comm.DISK_FILTER_DEVICE).(string)
+	host := dc.GetHost()
+	newDiskDevPathSlice := curveadm.MemStorage().Get(comm.DISK_REPLACEMENT_NEW_DISK_DEVICE).([]string)
+	if len(newDiskDevPathSlice) == 0 {
+		return nil, errno.ERR_REPLACE_DISK_MISSING_NEW_DISK_DEVICE.
+			F("New device for oldDisk replacement was not found")
+	}
+	newDiskDevPath := newDiskDevPathSlice[0]
+	diskRecord, err := curveadm.Storage().GetDiskByMountPoint(host, dc.GetDataDir())
+	if err != nil {
+		return nil, err
+	}
+	chunkserverId := diskRecord.ChunkServerID
 	subname := fmt.Sprintf("host=%s device=%s chunkserverId=%s",
-		dc.GetHost(), diskDevPath, chunkserverId)
-	hc, err := curveadm.GetHost(dc.GetHost())
+		host, newDiskDevPath, chunkserverId)
+	hc, err := curveadm.GetHost(host)
 	if err != nil {
 		return nil, err
 	}
@@ -107,11 +107,12 @@ func NewReplaceDiskTask(curveadm *cli.CurveAdm, dc *topology.DeployConfig) (*tas
 	t := task.NewTask("Replace Chunkserver Disk", subname, hc.GetSSHConfig())
 
 	t.AddStep(&replaceDisk{
-		chunkserverId: chunkserverId,
-		diskDevPath:   diskDevPath,
-		host:          dc.GetHost(),
-		diskData:      curveadm.Disks(),
-		curveadm:      curveadm,
+		chunkserverId:  chunkserverId,
+		newDiskDevPath: newDiskDevPath,
+		host:           host,
+		disksData:      curveadm.Disks(),
+		oldDisk:        diskRecord,
+		curveadm:       curveadm,
 	})
 
 	return t, nil

@@ -306,10 +306,16 @@ func UpdateDisks(disksData, host, newDiskDevice string,
 					newExcludehost = append(newExcludehost, h.(string))
 				}
 				disks.Disk[diskIndex][common.DISK_EXCLUDE_HOST] = newExcludehost
-			} else {
-				// append disk host
+			}
+			// append disk host
+			if diskMap[common.DISK_FILTER_HOST] != nil {
 				disks.Disk[diskIndex][common.DISK_FILTER_HOST] = append(
 					diskMap[common.DISK_FILTER_HOST].([]interface{}), host)
+				// remove disk's host config if it is the same as global host config
+				if len(disks.Disk[diskIndex][common.DISK_FILTER_HOST].([]string)) ==
+					len(disks.Global[common.DISK_FILTER_HOST].([]string)) {
+					disks.Disk[diskIndex][common.DISK_FILTER_HOST] = nil
+				}
 			}
 		} else {
 			// add new disk config

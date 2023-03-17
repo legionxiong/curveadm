@@ -241,8 +241,8 @@ var (
 
 	SELECT_DISK_REPLACEMENT_BY_DEVICE = `SELECT * FROM diskreplacement WHERE host = ? AND device = ?`
 
-	SET_DISK_REPLACEMENT_FORMER_ID = `UPDATE diskreplacement SET former_id = ?,
-	lastmodified_time = datetime('now','localtime') WHERE chunkserver_id = ?`
+	// SET_DISK_REPLACEMENT_FORMER_DISK_ID = `UPDATE diskreplacement SET former_disk_id = ?,
+	// lastmodified_time = datetime('now','localtime') WHERE chunkserver_id = ?`
 
 	SET_DISK_REPLACEMENT_PROGRESS = `UPDATE diskreplacement SET progress = ?,
 	lastmodified_time = datetime('now','localtime') WHERE chunkserver_id = ?`

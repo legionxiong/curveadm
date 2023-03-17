@@ -228,27 +228,20 @@ func (s *checkCopysetsHealty) Execute(ctx *context.Context) error {
 }
 
 func NewCheckDiskReplacementTask(curveadm *cli.CurveAdm, dc *topology.DeployConfig) (*task.Task, error) {
-	var oldDisk storage.Disk
 	host := dc.GetHost()
 	hc, err := curveadm.GetHost(host)
 	if err != nil {
 		return nil, err
 	}
-	newDiskDevice := curveadm.MemStorage().Get(comm.DISK_FILTER_DEVICE).(string)
-	chunkserverId := curveadm.MemStorage().Get(comm.DISK_CHUNKSERVER_ID).(string)
-	if diskRecords, err := curveadm.Storage().GetDisk(
-		comm.DISK_FILTER_SERVICE, chunkserverId); err != nil {
+	newDiskDevice := curveadm.MemStorage().Get(comm.DISK_REPLACEMENT_NEW_DISK_DEVICE).(string)
+	oldDisk, err := curveadm.Storage().GetDiskByMountPoint(host, dc.GetDataDir())
+	if err != nil {
 		return nil, err
-	} else {
-		if len(diskRecords) == 0 {
-			return nil, errno.ERR_DATABASE_EMPTY_QUERY_RESULT.
-				F("The disk of chunkserver[ID:%s] was not found", chunkserverId)
-		}
-		oldDisk = diskRecords[0]
 	}
-
+	chunkserverId := oldDisk.ChunkServerID
 	// new task
-	subname := fmt.Sprintf("host=%s device=%s, chunkserverId=%s", host, newDiskDevice, chunkserverId)
+	subname := fmt.Sprintf("host=%s device=%s, chunkserverId=%s",
+		host, newDiskDevice, chunkserverId)
 	t := task.NewTask("Check Disk Replacement", subname, hc.GetSSHConfig())
 
 	// 1. check disk size
@@ -289,7 +282,7 @@ func NewCheckDiskReplacementTask(curveadm *cli.CurveAdm, dc *topology.DeployConf
 		curveadm:      curveadm,
 	})
 
-	// 6. umount disk
+	// 6. umount old disk
 	t.AddStep(&step.UmountFilesystem{
 		Directorys:     []string{oldDisk.MountPoint},
 		IgnoreUmounted: true,

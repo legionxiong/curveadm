@@ -23,8 +23,6 @@
 package tui
 
 import (
-	"fmt"
-
 	"github.com/opencurve/curveadm/internal/storage"
 	tuicommon "github.com/opencurve/curveadm/internal/tui/common"
 )
@@ -47,7 +45,7 @@ func FormatDiskReplacements(diskReplacements []storage.DiskReplacement) string {
 			dr.Host,
 			dr.Device,
 			dr.ChunkServerID,
-			fmt.Sprintf("%s%s", dr.Progress, "%%"),
+			dr.Progress,
 			dr.Status,
 		})
 	}

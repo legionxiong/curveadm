@@ -560,6 +560,7 @@ var (
 	ERR_REPLACE_DISK_CLUSTER_NOT_HEALTHY       = EC(810007, "cluster not healthy")
 	ERR_REPLACE_DISK_CLUSTER_HEALTH_UNKNOWN    = EC(810008, "cluster health unknown")
 	ERR_REPLACE_DISK_NO_SUCH_REPLACEMENT       = EC(810008, "no such disk replacement")
+	ERR_REPLACE_DISK_MISSING_NEW_DISK_DEVICE   = EC(810008, "mising new disk device")
 
 	// 900: others
 	ERR_CANCEL_OPERATION = EC(CODE_CANCEL_OPERATION, "cancel operation")

@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/opencurve/curveadm/cli/cli"
+	"github.com/opencurve/curveadm/internal/common"
 	"github.com/opencurve/curveadm/internal/configure"
 	"github.com/opencurve/curveadm/internal/configure/disks"
 	os "github.com/opencurve/curveadm/internal/configure/os"
@@ -248,6 +249,8 @@ func NewFormatChunkfilePoolTask(curveadm *cli.CurveAdm, fc *configure.FormatConf
 	formatCommand := fmt.Sprintf("%s %s %d %d %s %s", formatScriptPath, layout.FormatBinaryPath,
 		usagePercent, DEFAULT_CHUNKFILE_SIZE, layout.ChunkfilePoolDir, layout.ChunkfilePoolMetaPath)
 
+	diskReplacementFormerDiskUuid := curveadm.MemStorage().Get(common.DISK_REPLACEMENT_FORMER_DISK_UUID)
+
 	// 1: skip if formating container exist
 	t.AddStep(&step.ListContainers{
 		ShowAll:     true,
@@ -282,6 +285,15 @@ func NewFormatChunkfilePoolTask(curveadm *cli.CurveAdm, fc *configure.FormatConf
 		Device:      device,
 		ExecOptions: curveadm.ExecOptions(),
 	})
+	// for replace-disk operation, update the former disk UUID to the new disk as
+	// the disk UUID has been wrote into the config of service(chunkserver) container
+	if diskReplacementFormerDiskUuid != nil {
+		t.AddStep(&step.Tune2Filesystem{
+			Device:      device,
+			Param:       fmt.Sprintf("-U %s", diskReplacementFormerDiskUuid),
+			ExecOptions: curveadm.ExecOptions(),
+		})
+	}
 	t.AddStep(&step.MountFilesystem{
 		Source:      device,
 		Directory:   mountPoint,
